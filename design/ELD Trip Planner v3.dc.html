@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;700;800&family=Overpass+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#0F1B2D"></rect><g fill="none" stroke="#F5A524" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><rect x="22" y="46" width="30" height="18" rx="2"></rect><path d="M52 51h12l8 8v5H52"></path><circle cx="32" cy="69" r="4.5"></circle><circle cx="64" cy="69" r="4.5"></circle><path d="M64 26a7 7 0 0 0-7 7c0 5 7 11 7 11s7-6 7-11a7 7 0 0 0-7-7z"></path></g></svg></template>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0F1B2D;-webkit-font-smoothing:antialiased}
+a{color:#F5A524;text-decoration:none}
+a:hover{color:#FFB83F;text-decoration:underline}
+input,button,select{font:inherit}
+input::placeholder{color:#6F7F96}
+.leaflet-container{font-family:Overpass,system-ui,sans-serif;background:#16202E}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#15253B;color:#F1F4F8;border:1px solid #F5A524}
+.leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.4}
+.leaflet-control-attribution{background:rgba(15,27,45,.8)!important;color:#A7B3C5!important}
+.leaflet-control-attribution a{color:#F5A524!important}
+.leaflet-bar a{background:#15253B!important;color:#F1F4F8!important;border-color:#2A4060!important}
+.eld-night{filter:invert(1) hue-rotate(190deg) brightness(0.78) contrast(0.92) saturate(0.35)}
+@keyframes eldlane{to{background-position:-44px 0}}
+@keyframes eldbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
+</style>
+</helmet>
+<div id="eld-root" style="width:{{ rootW }};min-height:100vh;background:radial-gradient(1100px 520px at 50% -260px,rgba(245,165,36,0.13),rgba(245,165,36,0) 70%),#0F1B2D;font-family:'Overpass',system-ui,sans-serif;color:#F1F4F8;font-size:15px;line-height:1.45;font-variant-numeric:tabular-nums;color-scheme:dark">
+
+<header style="background:#0F1B2D">
+  <div style="max-width:1280px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 {{ pad }}">
+    <a href="#" onClick="{{ goForm }}" style="display:flex;align-items:center;gap:10px;color:#F1F4F8;text-decoration:none">
+      <svg width="36" height="36" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="7" fill="#0F1B2D" stroke="#2A4060" stroke-width="1.5"></rect>
+        <g fill="none" stroke="#F5A524" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 3.2a3.6 3.6 0 0 0-3.6 3.6c0 2.7 3.6 5.6 3.6 5.6s3.6-2.9 3.6-5.6A3.6 3.6 0 0 0 23 3.2z"></path>
+          <rect x="3" y="13.5" width="14.5" height="8.5" rx="1"></rect>
+          <path d="M17.5 16h5.6l3.9 3.9V22h-9.5"></path>
+          <circle cx="8" cy="24.6" r="2.2" fill="#0F1B2D"></circle>
+          <circle cx="22.5" cy="24.6" r="2.2" fill="#0F1B2D"></circle>
+        </g>
+        <circle cx="23" cy="6.8" r="1.2" fill="#F5A524"></circle>
+      </svg>
+      <span style="font-size:20px;font-weight:800;letter-spacing:0.01em;white-space:nowrap">ELD Trip Planner</span>
+    </a>
+    <div style="display:flex;align-items:center;gap:12px">
+      <sc-if value="{{ notM }}" hint-placeholder-val="{{ true }}">
+        <span style="font-size:13px;color:#A7B3C5;border:1px solid #2A4060;border-radius:999px;padding:4px 12px 3px;white-space:nowrap">Property-carrying • 70 hr / 8 day</span>
+      </sc-if>
+      <sc-if value="{{ showNewTrip }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ goForm }}" style="height:38px;padding:2px 16px 0;border-radius:8px;border:1px solid #F5A524;background:transparent;color:#F5A524;font-size:14px;font-weight:700;cursor:pointer" style-hover="background:rgba(245,165,36,0.12)">New trip</button>
+      </sc-if>
+    </div>
+  </div>
+  <div style="height:2px;background-image:repeating-linear-gradient(90deg,#F5A524 0 24px,transparent 24px 44px);opacity:0.55"></div>
+</header>
+
+<sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}">
+<main style="padding:{{ pagePad }}">
+  <div style="max-width:1180px;margin:0 auto">
+    <div style="margin-bottom:26px;max-width:720px">
+      <h1 style="margin:0 0 6px;font-size:34px;line-height:1.15;font-weight:800;letter-spacing:-0.01em">Plan a trip</h1>
+      <p style="margin:0;color:#A7B3C5;font-size:16px;text-wrap:pretty">Enter the route and your current cycle. We schedule driving, breaks, fuel and rest under FMCSA Hours of Service rules and fill in your daily log sheets.</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <div style="flex:1 1 560px;min-width:0;background:#15253B;border:1px solid #2A4060;border-radius:12px;padding:{{ cardPad }}">
+
+
+        <div style="display:inline-flex;align-items:center;gap:10px;background:#0F1B2D;border:1.5px solid #F5A524;border-radius:6px;padding:6px 14px 4px 6px;margin-bottom:18px">
+          <span style="background:#F5A524;color:#0F1B2D;border-radius:3px;padding:2px 6px 0;font-size:12px;font-weight:800">01</span>
+          <span style="font-size:14px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#FFFFFF">Route</span>
+        </div>
+
+        <div style="position:relative;display:flex;flex-direction:column;gap:18px">
+          <div style="position:absolute;left:12px;top:48px;bottom:32px;width:2px;background-image:repeating-linear-gradient(180deg,#F5A524 0 8px,transparent 8px 14px);opacity:0.7"></div>
+
+          <div style="display:grid;grid-template-columns:26px minmax(0,1fr);column-gap:14px">
+            <div style="padding-top:36px;display:flex;justify-content:center;position:relative"><svg width="26" height="26" viewBox="0 0 32 32"><path d="M16 3L29 16L16 29L3 16Z" fill="#F5A524" stroke="#0F1B2D" stroke-width="2"></path><circle cx="16" cy="16" r="3.5" fill="#0F1B2D"></circle></svg></div>
+            <div style="position:relative">
+              <label style="display:block;font-size:14px;font-weight:700;margin-bottom:6px">Current location</label>
+              <input value="{{ f.current }}" onChange="{{ onCurrent }}" onFocus="{{ focCurrent }}" onBlur="{{ blur }}" placeholder="City, street address or ZIP" autocomplete="off" style="width:100%;height:48px;border:1px solid {{ bd.current }};border-radius:8px;padding:2px 14px 0;font-size:16px;color:#F1F4F8;background:#0F1B2D;outline:none" style-focus="border-color:#F5A524;box-shadow:0 0 0 3px rgba(245,165,36,0.25)">
+              <sc-if value="{{ sug.showCurrent }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;z-index:20;left:0;right:0;top:80px;background:#1B2E48;border:1px solid #34507A;border-radius:8px;box-shadow:0 14px 34px rgba(0,0,0,0.45);padding:6px">
+                  <sc-for list="{{ sug.current }}" as="o" hint-placeholder-count="3">
+                    <div onMouseDown="{{ o.pick }}" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:6px;cursor:pointer" style-hover="background:#24395A">
+                      <svg width="16" height="16" viewBox="0 0 16 16" style="flex:none"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 3.4 4.5 8.5 4.5 8.5s4.5-5.1 4.5-8.5A4.5 4.5 0 0 0 8 1.5z" fill="#F5A524"></path><circle cx="8" cy="6" r="1.7" fill="#1B2E48"></circle></svg>
+                      <div><div style="font-weight:700">{{ o.name }}</div><div style="font-size:13px;color:#A7B3C5">{{ o.sub }}</div></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ err.current }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:6px;font-size:14px;color:#FF9A9D">{{ err.current.msg }} Did you mean <button onClick="{{ err.current.fix }}" style="border:0;background:none;padding:0;color:#F5A524;font-weight:800;text-decoration:underline;cursor:pointer">{{ err.current.sug }}</button>?</div>
+              </sc-if>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:26px minmax(0,1fr);column-gap:14px">
+            <div style="padding-top:34px;display:flex;justify-content:center;position:relative"><svg width="28" height="28" viewBox="0 0 32 32"><path d="M5 4H27Q26 8 28 11Q29 22 16 29Q3 22 4 11Q6 8 5 4Z" fill="#14B8A6" stroke="#0F1B2D" stroke-width="2.5"></path><path d="M5 4H27Q26 8 28 11Q29 22 16 29Q3 22 4 11Q6 8 5 4Z" fill="none" stroke="#FFFFFF" stroke-width="1.1" transform="translate(16 16) scale(0.84) translate(-16 -16)"></path><text x="16" y="19.5" text-anchor="middle" font-size="11" font-weight="800" fill="#0F1B2D" font-family="Overpass">P</text></svg></div>
+            <div style="position:relative">
+              <label style="display:block;font-size:14px;font-weight:700;margin-bottom:6px">Pickup location</label>
+              <input value="{{ f.pickup }}" onChange="{{ onPickup }}" onFocus="{{ focPickup }}" onBlur="{{ blur }}" placeholder="Shipper address" autocomplete="off" style="width:100%;height:48px;border:1px solid {{ bd.pickup }};border-radius:8px;padding:2px 14px 0;font-size:16px;color:#F1F4F8;background:#0F1B2D;outline:none" style-focus="border-color:#F5A524;box-shadow:0 0 0 3px rgba(245,165,36,0.25)">
+              <sc-if value="{{ sug.showPickup }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;z-index:20;left:0;right:0;top:80px;background:#1B2E48;border:1px solid #34507A;border-radius:8px;box-shadow:0 14px 34px rgba(0,0,0,0.45);padding:6px">
+                  <sc-for list="{{ sug.pickup }}" as="o" hint-placeholder-count="3">
+                    <div onMouseDown="{{ o.pick }}" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:6px;cursor:pointer" style-hover="background:#24395A">
+                      <svg width="16" height="16" viewBox="0 0 16 16" style="flex:none"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 3.4 4.5 8.5 4.5 8.5s4.5-5.1 4.5-8.5A4.5 4.5 0 0 0 8 1.5z" fill="#F5A524"></path><circle cx="8" cy="6" r="1.7" fill="#1B2E48"></circle></svg>
+                      <div><div style="font-weight:700">{{ o.name }}</div><div style="font-size:13px;color:#A7B3C5">{{ o.sub }}</div></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ err.pickup }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:6px;font-size:14px;color:#FF9A9D">{{ err.pickup.msg }} Did you mean <button onClick="{{ err.pickup.fix }}" style="border:0;background:none;padding:0;color:#F5A524;font-weight:800;text-decoration:underline;cursor:pointer">{{ err.pickup.sug }}</button>?</div>
+              </sc-if>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:26px minmax(0,1fr);column-gap:14px">
+            <div style="padding-top:34px;display:flex;justify-content:center;position:relative"><svg width="28" height="28" viewBox="0 0 32 32"><path d="M4 6Q10 3 16 6Q22 3 28 6L28 14Q28 25 16 30Q4 25 4 14Z" fill="#14B8A6" stroke="#0F1B2D" stroke-width="2.5"></path><path d="M4 6Q10 3 16 6Q22 3 28 6L28 14Q28 25 16 30Q4 25 4 14Z" fill="none" stroke="#FFFFFF" stroke-width="1.1" transform="translate(16 16) scale(0.84) translate(-16 -16)"></path><text x="16" y="20" text-anchor="middle" font-size="11" font-weight="800" fill="#0F1B2D" font-family="Overpass">D</text></svg></div>
+            <div style="position:relative">
+              <label style="display:block;font-size:14px;font-weight:700;margin-bottom:6px">Dropoff location</label>
+              <input value="{{ f.dropoff }}" onChange="{{ onDropoff }}" onFocus="{{ focDropoff }}" onBlur="{{ blur }}" placeholder="Consignee address" autocomplete="off" style="width:100%;height:48px;border:1px solid {{ bd.dropoff }};border-radius:8px;padding:2px 14px 0;font-size:16px;color:#F1F4F8;background:{{ bg.dropoff }};outline:none" style-focus="border-color:#F5A524;box-shadow:0 0 0 3px rgba(245,165,36,0.25)">
+              <sc-if value="{{ sug.showDropoff }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;z-index:20;left:0;right:0;top:80px;background:#1B2E48;border:1px solid #34507A;border-radius:8px;box-shadow:0 14px 34px rgba(0,0,0,0.45);padding:6px">
+                  <sc-for list="{{ sug.dropoff }}" as="o" hint-placeholder-count="3">
+                    <div onMouseDown="{{ o.pick }}" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:6px;cursor:pointer" style-hover="background:#24395A">
+                      <svg width="16" height="16" viewBox="0 0 16 16" style="flex:none"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 3.4 4.5 8.5 4.5 8.5s4.5-5.1 4.5-8.5A4.5 4.5 0 0 0 8 1.5z" fill="#F5A524"></path><circle cx="8" cy="6" r="1.7" fill="#1B2E48"></circle></svg>
+                      <div><div style="font-weight:700">{{ o.name }}</div><div style="font-size:13px;color:#A7B3C5">{{ o.sub }}</div></div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ err.dropoff }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:6px;font-size:14px;color:#FF9A9D">{{ err.dropoff.msg }} Did you mean <button onClick="{{ err.dropoff.fix }}" style="border:0;background:none;padding:0;color:#F5A524;font-weight:800;text-decoration:underline;cursor:pointer">{{ err.dropoff.sug }}</button>?</div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:3px;margin:30px 0 24px;background-image:repeating-linear-gradient(90deg,#F5A524 0 24px,transparent 24px 44px);opacity:0.85"></div>
+
+        <div style="display:inline-flex;align-items:center;gap:10px;background:#0F1B2D;border:1.5px solid #F5A524;border-radius:6px;padding:6px 14px 4px 6px;margin-bottom:18px">
+          <span style="background:#F5A524;color:#0F1B2D;border-radius:3px;padding:2px 6px 0;font-size:12px;font-weight:800">02</span>
+          <span style="font-size:14px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#FFFFFF">Hours of Service</span>
+        </div>
+
+        <label style="display:block;font-size:14px;font-weight:700;margin-bottom:2px">Current cycle used</label>
+        <p style="margin:0 0 10px;font-size:14px;color:#A7B3C5">On-duty hours (driving + on duty) logged in the last 8 days, from 0 to 70.</p>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px">
+          <div style="position:relative;width:132px;flex:none">
+            <input type="number" min="0" max="70" step="0.25" value="{{ f.cycle }}" onChange="{{ onCycle }}" style="width:100%;height:48px;border:1px solid #34507A;border-radius:8px;padding:2px 44px 0 14px;font-size:17px;font-family:'Overpass Mono',monospace;color:#F1F4F8;background:#0F1B2D;outline:none" style-focus="border-color:#F5A524;box-shadow:0 0 0 3px rgba(245,165,36,0.25)">
+            <span style="position:absolute;right:12px;top:14px;color:#A7B3C5;font-size:14px">hrs</span>
+          </div>
+          <input type="range" min="0" max="70" step="0.5" value="{{ f.cycle }}" onChange="{{ onCycle }}" aria-label="Cycle used" style="flex:1 1 200px;accent-color:#F5A524;height:24px">
+        </div>
+        <div style="margin-top:14px;height:10px;background:#0F1B2D;border:1px solid #34507A;border-radius:5px;overflow:hidden"><div style="height:100%;width:{{ cyclePct }};background:#F5A524"></div></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;margin-top:6px;font-size:14px;color:#A7B3C5">
+          <span><strong style="color:#F1F4F8">{{ f.cycle }} h</strong> used</span>
+          <span style="color:{{ availColor }}"><strong>{{ cycleAvail }} h</strong> left of 70</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin-top:22px">
+          <div>
+            <label style="display:block;font-size:14px;font-weight:700;margin-bottom:6px">Start date</label>
+            <input type="date" value="{{ f.date }}" onChange="{{ onDate }}" style="width:100%;height:48px;border:1px solid #34507A;border-radius:8px;padding:2px 12px 0;font-size:16px;color:#F1F4F8;background:#0F1B2D;outline:none" style-focus="border-color:#F5A524;box-shadow:0 0 0 3px rgba(245,165,36,0.25)">
+          </div>
+          <div>
+            <label style="display:block;font-size:14px;font-weight:700;margin-bottom:6px">Start time</label>
+            <input type="time" value="{{ f.time }}" onChange="{{ onTime }}" style="width:100%;height:48px;border:1px solid #34507A;border-radius:8px;padding:2px 12px 0;font-size:16px;color:#F1F4F8;background:#0F1B2D;outline:none" style-focus="border-color:#F5A524;box-shadow:0 0 0 3px rgba(245,165,36,0.25)">
+          </div>
+        </div>
+        <p style="margin:8px 0 0;font-size:14px;color:#A7B3C5">Pre-filled with now. Use your home terminal time zone.</p>
+
+        <div style="height:3px;margin:28px 0 0;background-image:repeating-linear-gradient(90deg,#F5A524 0 24px,transparent 24px 44px);opacity:0.85"></div>
+
+        <button onClick="{{ toggleOpt }}" aria-expanded="{{ optOpen }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;background:none;border:0;padding:18px 0;cursor:pointer;text-align:left;color:#F1F4F8">
+          <span>
+            <span style="display:block;font-size:16px;font-weight:700">Driver &amp; carrier details <span style="font-weight:400;color:#A7B3C5">(optional)</span></span>
+            <span style="display:block;font-size:14px;color:#A7B3C5">Printed in the header of each log sheet</span>
+          </span>
+          <svg width="20" height="20" viewBox="0 0 20 20" style="flex:none;transform:rotate({{ optRot }});transition:transform .15s"><path d="M5 8l5 5 5-5" fill="none" stroke="#F5A524" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </button>
+        <sc-if value="{{ optOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;padding-bottom:20px">
+            <sc-for list="{{ optFields }}" as="o" hint-placeholder-count="9">
+              <div>
+                <label style="display:block;font-size:14px;font-weight:700;margin-bottom:6px">{{ o.label }}</label>
+                <input value="{{ o.value }}" onChange="{{ o.onChange }}" placeholder="{{ o.ph }}" style="width:100%;height:46px;border:1px solid #34507A;border-radius:8px;padding:2px 12px 0;font-size:15px;color:#F1F4F8;background:#0F1B2D;outline:none" style-focus="border-color:#F5A524;box-shadow:0 0 0 3px rgba(245,165,36,0.25)">
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;justify-content:flex-end;border-top:1px solid #2A4060;padding-top:20px">
+          <button onClick="{{ plan }}" style="width:{{ btnW }};height:52px;padding:3px 30px 0;border-radius:8px;border:0;background:#F5A524;color:#0F1B2D;font-size:17px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 0 24px rgba(245,165,36,0.25)" style-hover="background:#FFB83F">
+            Plan trip
+            <svg width="18" height="18" viewBox="0 0 18 18" style="margin-top:-3px"><path d="M3 9h11M10 4.5L14.5 9 10 13.5" fill="none" stroke="#0F1B2D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <aside style="flex:1 1 300px;max-width:100%;min-width:0;background:#15253B;border:1px solid #2A4060;border-radius:12px;padding:22px 22px 18px">
+        <div style="display:inline-flex;align-items:center;background:#0F1B2D;border:1.5px solid #F5A524;border-radius:6px;padding:6px 14px 4px;margin-bottom:10px">
+          <span style="font-size:14px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#FFFFFF">Planning rules</span>
+        </div>
+        <sc-for list="{{ rules }}" as="r" hint-placeholder-count="8">
+          <div style="display:flex;justify-content:space-between;gap:16px;padding:10px 0 8px;border-bottom:1px solid #22354F;font-size:14px">
+            <span style="color:#A7B3C5">{{ r.k }}</span><span style="font-weight:700;text-align:right">{{ r.v }}</span>
+          </div>
+        </sc-for>
+        <div style="margin-top:16px;font-size:12px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#A7B3C5">Duty status colors</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:8px;font-size:14px">
+          <span style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:4px;border-radius:2px;background:#94A3B8"></span>Off duty</span>
+          <span style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:4px;border-radius:2px;background:#6366F1"></span>Sleeper berth</span>
+          <span style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:4px;border-radius:2px;background:#F5A524"></span>Driving</span>
+          <span style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:4px;border-radius:2px;background:#14B8A6"></span>On duty</span>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+<main style="padding:{{ pagePad }}">
+  <div style="max-width:620px;margin:40px auto 0;background:#15253B;border:1px solid #2A4060;border-radius:12px;padding:{{ cardPad }}">
+    <div style="display:inline-flex;align-items:center;background:#0F1B2D;border:1.5px solid #F5A524;border-radius:6px;padding:6px 14px 4px">
+      <span style="font-size:14px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#FFFFFF">Planning trip</span>
+    </div>
+    <h2 style="margin:14px 0 2px;font-size:24px;line-height:1.2;font-weight:800">{{ f.current }} → {{ f.dropoff }}</h2>
+    <div style="color:#A7B3C5;font-size:15px">Pickup in {{ f.pickup }} • {{ f.cycle }} h cycle used</div>
+    <div style="margin:28px 0 10px">{{ lane }}</div>
+    <div style="font-size:17px;font-weight:700;text-align:center;margin-top:6px">Planning your trip…</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px;font-size:14px;color:#A7B3C5">
+      <span>Route, Hours of Service schedule and log sheets are calculated together.</span>
+      <a href="#" onClick="{{ goForm }}">Cancel</a>
+    </div>
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ isResults }}" hint-placeholder-val="{{ false }}">
+<main style="padding:{{ pagePad }}">
+  <div style="max-width:1280px;margin:0 auto">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:24px">
+      <div style="min-width:0">
+        <div style="font-size:14px;color:#A7B3C5">Trip plan • departs Thu, Oct 1, 2026 at 06:00</div>
+        <h1 style="margin:4px 0 0;font-size:32px;line-height:1.15;font-weight:800;letter-spacing:-0.01em">Chicago, IL → Denver, CO</h1>
+        <div style="font-size:15px;color:#A7B3C5;margin-top:2px">Pickup in Rockford, IL • Tractor 2417 • Marcus Delgado</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button onClick="{{ goForm }}" style="height:44px;padding:3px 18px 0;border-radius:8px;border:1px solid #34507A;background:transparent;color:#F1F4F8;font-size:15px;font-weight:700;cursor:pointer" style-hover="background:#1B2E48">Edit trip</button>
+        <button onClick="{{ openLog0 }}" style="height:44px;padding:3px 18px 0;border-radius:8px;border:0;background:#F5A524;color:#0F1B2D;font-size:15px;font-weight:800;cursor:pointer" style-hover="background:#FFB83F">View daily logs</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:{{ statGap }};margin-bottom:28px">
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div style="width:100%;background:#1A3354;border-radius:10px;padding:4px">
+          <div style="border:2px solid #E9EEF5;border-radius:7px;padding:12px 10px 10px;text-align:center">
+            <div style="font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#E9EEF5">Total miles</div>
+            <div style="font-size:{{ statNum }};font-weight:800;line-height:1.05;margin-top:6px;color:#FFFFFF">1,070</div>
+            <div style="font-size:13px;color:#C3CEDD;margin-top:4px">19 h 45 m driving</div>
+          </div>
+        </div>
+        <div style="width:14px;height:{{ postH }};background:linear-gradient(90deg,#4A5A72,#8C9BB0,#4A5A72)"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div style="width:100%;background:#1A3354;border-radius:10px;padding:4px">
+          <div style="border:2px solid #E9EEF5;border-radius:7px;padding:12px 10px 10px;text-align:center">
+            <div style="font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#E9EEF5">Days</div>
+            <div style="font-size:{{ statNum }};font-weight:800;line-height:1.05;margin-top:6px;color:#FFFFFF">2</div>
+            <div style="font-size:13px;color:#C3CEDD;margin-top:4px">Thu, Oct 1 – Fri, Oct 2</div>
+          </div>
+        </div>
+        <div style="width:14px;height:{{ postH }};background:linear-gradient(90deg,#4A5A72,#8C9BB0,#4A5A72)"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div style="width:100%;background:#1A3354;border-radius:10px;padding:4px">
+          <div style="border:2px solid #E9EEF5;border-radius:7px;padding:12px 10px 10px;text-align:center">
+            <div style="font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#E9EEF5">Cycle used after</div>
+            <div style="font-size:{{ statNum }};font-weight:800;line-height:1.05;margin-top:6px;color:#FFFFFF">60.25<span style="font-size:18px;color:#C3CEDD"> / 70</span></div>
+            <div style="margin:8px auto 0;height:6px;max-width:150px;background:#0F1B2D;border-radius:3px;overflow:hidden"><div style="height:100%;width:86%;background:#F5A524"></div></div>
+          </div>
+        </div>
+        <div style="width:14px;height:{{ postH }};background:linear-gradient(90deg,#4A5A72,#8C9BB0,#4A5A72)"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div style="width:100%;background:#1A3354;border-radius:10px;padding:4px">
+          <div style="border:2px solid #F5A524;border-radius:7px;padding:12px 10px 10px;text-align:center">
+            <div style="font-size:12px;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#F5A524">Hours tomorrow</div>
+            <div style="font-size:{{ statNum }};font-weight:800;line-height:1.05;margin-top:6px;color:#FFFFFF">9.75</div>
+            <div style="font-size:13px;color:#C3CEDD;margin-top:4px">70 − 60.25 • Sat, Oct 3</div>
+          </div>
+        </div>
+        <div style="width:14px;height:{{ postH }};background:linear-gradient(90deg,#4A5A72,#8C9BB0,#4A5A72)"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+      <div style="flex:1 1 620px;min-width:0;background:#15253B;border:1px solid #2A4060;border-radius:12px;overflow:hidden">
+        <div ref="{{ mapRef }}" style="height:{{ mapH }};width:100%;background:#16202E"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px 18px;padding:12px 16px 10px;border-top:1px solid #2A4060;font-size:13px">
+          <span style="display:inline-flex;align-items:center;gap:7px"><span style="width:24px;height:4px;border-radius:2px;background:#F5A524;box-shadow:0 0 8px rgba(245,165,36,0.6)"></span>Route (driving)</span>
+          <sc-for list="{{ legend }}" as="k" hint-placeholder-count="7">
+            <span style="display:inline-flex;align-items:center;gap:6px;color:{{ k.lc }}">
+              <span style="position:relative;width:22px;height:22px;flex:none;display:inline-block;font-size:22px;opacity:{{ k.op }}"><svg width="22" height="22" viewBox="0 0 32 32" style="display:block"><path d="{{ k.path }}" fill="{{ k.fill }}" stroke="#0F1B2D" stroke-width="2.5"></path><path d="{{ k.path }}" fill="none" stroke="#FFFFFF" stroke-width="1.2" transform="translate(16 16) scale(0.84) translate(-16 -16)"></path></svg><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-top:{{ k.pt }};font-size:{{ k.fsz }};font-weight:800;color:{{ k.fg }};line-height:1">{{ k.g }}</span></span>{{ k.name }}
+            </span>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:1 1 360px;min-width:0;height:{{ tlH }};display:flex;flex-direction:column;background:#15253B;border:1px solid #2A4060;border-radius:12px;overflow:hidden">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 18px 12px;border-bottom:1px solid #22354F">
+          <div style="display:inline-flex;align-items:center;background:#0F1B2D;border:1.5px solid #F5A524;border-radius:6px;padding:6px 14px 4px"><span style="font-size:14px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#FFFFFF">Stops</span></div>
+          <span style="font-size:14px;color:#A7B3C5">6 stops • 2 days</span>
+        </div>
+        <div style="flex:1;min-height:0;overflow:auto;padding:8px 10px 12px">
+          <sc-for list="{{ stops }}" as="s" hint-placeholder-count="6">
+            <div>
+              <sc-if value="{{ s.drive }}" hint-placeholder-val="{{ true }}">
+                <div style="display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;padding:0 8px">
+                  <div style="display:flex;justify-content:center"><div style="width:3px;min-height:34px;background-image:repeating-linear-gradient(180deg,#F5A524 0 7px,transparent 7px 13px)"></div></div>
+                  <div style="align-self:center;font-size:13px;color:#A7B3C5;font-family:'Overpass Mono',monospace">Drive {{ s.drive }}</div>
+                </div>
+              </sc-if>
+              <button onClick="{{ s.focus }}" style="width:100%;display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:12px;align-items:start;text-align:left;background:{{ s.rowBg }};border:0;padding:10px 8px 8px;border-radius:8px;cursor:pointer;color:#F1F4F8" style-hover="background:#1B2E48">
+                <span style="position:relative;width:30px;height:30px;display:block;font-size:30px"><svg width="30" height="30" viewBox="0 0 32 32" style="display:block"><path d="{{ s.k.path }}" fill="{{ s.k.fill }}" stroke="#0F1B2D" stroke-width="2.5"></path><path d="{{ s.k.path }}" fill="none" stroke="#FFFFFF" stroke-width="1.2" transform="translate(16 16) scale(0.84) translate(-16 -16)"></path></svg><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-top:{{ s.k.pt }};font-size:{{ s.k.fsz }};font-weight:800;color:{{ s.k.fg }};line-height:1">{{ s.k.g }}</span></span>
+                <span style="min-width:0">
+                  <span style="display:block;font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:{{ s.k.text }}">{{ s.k.name }}</span>
+                  <span style="display:block;font-size:16px;font-weight:700">{{ s.city }}</span>
+                  <span style="display:block;font-size:13px;color:#A7B3C5;font-family:'Overpass Mono',monospace">{{ s.time }}</span>
+                </span>
+                <span style="font-size:13px;font-weight:700;font-family:'Overpass Mono',monospace;background:#0F1B2D;border:1px solid #2A4060;border-radius:6px;padding:3px 8px 1px;white-space:nowrap">{{ s.dur }}</span>
+              </button>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:3px;margin:34px 0 26px;background-image:repeating-linear-gradient(90deg,#F5A524 0 24px,transparent 24px 44px);opacity:0.85"></div>
+
+    <section>
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px 16px;margin-bottom:14px">
+        <div style="display:inline-flex;align-items:center;gap:10px;background:#0F1B2D;border:1.5px solid #F5A524;border-radius:6px;padding:7px 16px 5px 7px">
+          <span style="background:#F5A524;color:#0F1B2D;border-radius:3px;padding:2px 6px 0;font-size:12px;font-weight:800">2</span>
+          <span style="font-size:16px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#FFFFFF">Daily log sheets</span>
+        </div>
+        <a href="#" onClick="{{ openLog0 }}" style="font-weight:700">Open log viewer →</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px">
+        <sc-for list="{{ days }}" as="d" hint-placeholder-count="2">
+          <button onClick="{{ d.open }}" style="text-align:left;background:#FAF7F2;border:1px solid #FAF7F2;border-radius:8px;padding:16px;cursor:pointer;color:#0F1B2D;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,0.35)" style-hover="box-shadow:0 0 0 2px #F5A524,0 10px 30px rgba(0,0,0,0.35)">
+            <span style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+              <span style="font-size:16px;font-weight:800">Day {{ d.n }} • {{ d.date }}</span>
+              <span style="font-size:13px;color:#475569;font-family:'Overpass Mono',monospace">{{ d.miles }} mi</span>
+            </span>
+            <span style="font-size:14px;color:#475569;margin-top:-6px">{{ d.from }} → {{ d.to }}</span>
+            <span style="position:relative;display:block;height:64px;border:1.5px solid #0F1B2D;background-image:linear-gradient(to right,#94A3B8 1px,transparent 1px),linear-gradient(to bottom,#94A3B8 1px,transparent 1px);background-size:calc(100% / 24) 100%,100% 25%">
+              <sc-for list="{{ d.segs }}" as="sg" hint-placeholder-count="5">
+                <span style="position:absolute;left:{{ sg.l }};width:{{ sg.w }};top:{{ sg.t }};height:3px;margin-top:-1.5px;background:{{ sg.c }}"></span>
+              </sc-for>
+              <sc-for list="{{ d.vlines }}" as="vl" hint-placeholder-count="4">
+                <span style="position:absolute;left:{{ vl.l }};top:{{ vl.t }};height:{{ vl.h }};width:1.5px;margin-left:-0.75px;background:#0F1B2D"></span>
+              </sc-for>
+            </span>
+            <span style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1.5px solid #0F1B2D;font-size:12px;color:#475569">
+              <sc-for list="{{ d.tots }}" as="tt" hint-placeholder-count="4">
+                <span style="display:flex;flex-direction:column;gap:2px;padding:6px 8px 4px;border-right:1px solid #94A3B8">
+                  <span style="display:flex;align-items:center;gap:5px;white-space:nowrap"><span style="width:10px;height:4px;border-radius:2px;background:{{ tt.c }};box-shadow:0 0 0 1px rgba(15,27,45,0.35)"></span>{{ tt.k }}</span>
+                  <strong style="color:#0F1B2D;font-family:'Overpass Mono',monospace;font-size:14px">{{ tt.v }}</strong>
+                </span>
+              </sc-for>
+              <span style="display:flex;flex-direction:column;gap:2px;padding:6px 8px 4px;background:#0F1B2D;color:#C3CEDD">
+                <span>Total</span>
+                <strong style="color:#FFFFFF;font-family:'Overpass Mono',monospace;font-size:14px">{{ d.sum }}</strong>
+              </span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="margin-top:28px;background:#15253B;border:1px solid #2A4060;border-radius:12px">
+      <button onClick="{{ toggleDir }}" aria-expanded="{{ dirOpen }}" style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;background:none;border:0;padding:16px 20px;cursor:pointer;text-align:left;color:#F1F4F8;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;background:#0F1B2D;border:1.5px solid #F5A524;border-radius:6px;padding:6px 14px 4px"><span style="font-size:14px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#FFFFFF">Turn-by-turn directions</span></span>
+          <span style="font-size:14px;color:#A7B3C5">{{ dirCount }} steps • I-90 W, I-80 W, I-76 W</span>
+        </span>
+        <svg width="20" height="20" viewBox="0 0 20 20" style="flex:none;transform:rotate({{ dirRot }});transition:transform .15s"><path d="M5 8l5 5 5-5" fill="none" stroke="#F5A524" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+      <sc-if value="{{ dirOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="border-top:1px solid #22354F;padding:4px 20px 14px">
+          <sc-for list="{{ directions }}" as="dd" hint-placeholder-count="12">
+            <div style="display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0 8px;border-bottom:1px solid #22354F">
+              <sc-if value="{{ dd.k }}" hint-placeholder-val="{{ false }}">
+                <span style="position:relative;width:26px;height:26px;display:block;font-size:26px"><svg width="26" height="26" viewBox="0 0 32 32" style="display:block"><path d="{{ dd.k.path }}" fill="{{ dd.k.fill }}" stroke="#0F1B2D" stroke-width="2.5"></path><path d="{{ dd.k.path }}" fill="none" stroke="#FFFFFF" stroke-width="1.2" transform="translate(16 16) scale(0.84) translate(-16 -16)"></path></svg><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-top:{{ dd.k.pt }};font-size:{{ dd.k.fsz }};font-weight:800;color:{{ dd.k.fg }};line-height:1">{{ dd.k.g }}</span></span>
+              </sc-if>
+              <sc-if value="{{ dd.num }}" hint-placeholder-val="{{ true }}">
+                <span style="width:24px;height:24px;border-radius:50%;border:1px solid #34507A;color:#A7B3C5;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;padding-top:2px">{{ dd.num }}</span>
+              </sc-if>
+              <span style="font-weight:{{ dd.weight }};text-wrap:pretty">{{ dd.t }}</span>
+              <span style="font-size:13px;color:#A7B3C5;font-family:'Overpass Mono',monospace;white-space:nowrap">{{ dd.d }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </section>
+  </div>
+</main>
+</sc-if>
+
+<sc-if value="{{ isLog }}" hint-placeholder-val="{{ false }}">
+<main style="padding:{{ pagePad }}">
+  <div style="max-width:1180px;margin:0 auto">
+    <a href="#" onClick="{{ toResults }}" style="font-size:15px;font-weight:700">← Trip results</a>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 16px;margin:10px 0 18px">
+      <div>
+        <h1 style="margin:0;font-size:32px;line-height:1.15;font-weight:800">Daily logs</h1>
+        <div style="font-size:15px;color:#A7B3C5">Chicago, IL → Denver, CO • {{ f.driver }}</div>
+      </div>
+      <button onClick="{{ printIt }}" style="height:44px;padding:3px 18px 0;border-radius:8px;border:1px solid #34507A;background:transparent;color:#F1F4F8;font-size:15px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px" style-hover="background:#1B2E48">
+        <svg width="18" height="18" viewBox="0 0 18 18" style="margin-top:-2px"><path d="M5 7V2h8v5M5 13H3V7h12v6h-2M5 10h8v6H5z" fill="none" stroke="#F5A524" stroke-width="1.6" stroke-linejoin="round"></path></svg>
+        Print logs
+      </button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onClick="{{ prevDay }}" aria-label="Previous day" style="width:46px;height:46px;flex:none;border-radius:8px;border:1px solid #34507A;background:#15253B;cursor:pointer;opacity:{{ prevOp }};display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M11 4L6 9l5 5" fill="none" stroke="#F5A524" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      <div style="flex:none;padding:0 10px;text-align:center;line-height:1.2;min-width:110px">
+        <div style="font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#F5A524">Day {{ L.n }} of 2</div>
+        <div style="font-size:16px;font-weight:800">{{ L.date }}</div>
+      </div>
+      <button onClick="{{ nextDay }}" aria-label="Next day" style="width:46px;height:46px;flex:none;border-radius:8px;border:1px solid #34507A;background:#15253B;cursor:pointer;opacity:{{ nextOp }};display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M7 4l5 5-5 5" fill="none" stroke="#F5A524" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+      <sc-if value="{{ notM }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:8px;flex:1;min-width:0;margin-left:8px">
+          <sc-for list="{{ dayTabs }}" as="t" hint-placeholder-count="2">
+            <button onClick="{{ t.go }}" style="flex:1 1 0;min-width:0;height:46px;border-radius:8px;border:1px solid {{ t.bd }};background:{{ t.bg }};color:{{ t.fg }};cursor:pointer;text-align:left;padding:3px 14px 0;font-size:15px;font-weight:700;white-space:nowrap">Day {{ t.n }} • {{ t.date }} • {{ t.miles }} mi</button>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+
+    <div data-screen-label="Daily log sheet" style="background:#FAF7F2;color:#0F1B2D;border-radius:4px;box-shadow:0 24px 60px rgba(0,0,0,0.5);padding:{{ sheetPad }};margin-top:18px">
+
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px 28px">
+        <div>
+          <div style="font-size:28px;font-weight:800;line-height:1.05">Drivers Daily Log</div>
+          <div style="font-size:13px;color:#475569;margin-top:2px">(24 hours)</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-end">
+          <div style="text-align:center"><div style="font-family:'Overpass Mono',monospace;font-size:20px;font-weight:600;border-bottom:1.5px solid #0F1B2D;min-width:48px;padding:0 4px">{{ L.mm }}</div><div style="font-size:11px;color:#475569;margin-top:2px">(month)</div></div>
+          <div style="font-size:20px;padding-bottom:18px">/</div>
+          <div style="text-align:center"><div style="font-family:'Overpass Mono',monospace;font-size:20px;font-weight:600;border-bottom:1.5px solid #0F1B2D;min-width:48px;padding:0 4px">{{ L.dd }}</div><div style="font-size:11px;color:#475569;margin-top:2px">(day)</div></div>
+          <div style="font-size:20px;padding-bottom:18px">/</div>
+          <div style="text-align:center"><div style="font-family:'Overpass Mono',monospace;font-size:20px;font-weight:600;border-bottom:1.5px solid #0F1B2D;min-width:68px;padding:0 4px">{{ L.yy }}</div><div style="font-size:11px;color:#475569;margin-top:2px">(year)</div></div>
+        </div>
+        <div style="font-size:12px;color:#475569;max-width:290px;line-height:1.4"><strong style="color:#0F1B2D">Original</strong> – File at home terminal.<br><strong style="color:#0F1B2D">Duplicate</strong> – Driver retains in his/her possession for 8 days.</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 40px;margin-top:22px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:15px;font-weight:800">From:</span><span style="flex:1;border-bottom:1.5px solid #0F1B2D;font-size:17px;font-weight:700;padding:0 4px">{{ L.from }}</span></div>
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:15px;font-weight:800">To:</span><span style="flex:1;border-bottom:1.5px solid #0F1B2D;font-size:17px;font-weight:700;padding:0 4px">{{ L.to }}</span></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px 40px;margin-top:22px">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div><div style="border:1.5px solid #0F1B2D;height:56px;display:flex;align-items:center;justify-content:center;font-family:'Overpass Mono',monospace;font-size:24px;font-weight:600">{{ L.miles }}</div><div style="font-size:11px;color:#475569;text-align:center;margin-top:4px">Total Miles Driving Today</div></div>
+            <div><div style="border:1.5px solid #0F1B2D;height:56px;display:flex;align-items:center;justify-content:center;font-family:'Overpass Mono',monospace;font-size:24px;font-weight:600">{{ L.miles }}</div><div style="font-size:11px;color:#475569;text-align:center;margin-top:4px">Total Mileage Today</div></div>
+          </div>
+          <div><div style="border-bottom:1.5px solid #0F1B2D;font-size:16px;font-weight:700;padding:0 4px;min-height:24px;text-align:center">{{ truckLine }}</div><div style="font-size:11px;color:#475569;margin-top:3px;text-align:center">Truck/Tractor and Trailer Numbers or License Plate(s)/State (show each unit)</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div><div style="border-bottom:1.5px solid #0F1B2D;font-size:18px;font-weight:700;padding:0 4px;min-height:26px;text-align:center">{{ f.carrier }}</div><div style="font-size:11px;color:#475569;margin-top:3px;text-align:center">Name of Carrier or Carriers</div></div>
+          <div><div style="border-bottom:1.5px solid #0F1B2D;font-size:16px;font-weight:700;padding:0 4px;min-height:24px;text-align:center">{{ f.office }}</div><div style="font-size:11px;color:#475569;margin-top:3px;text-align:center">Main Office Address</div></div>
+          <div><div style="border-bottom:1.5px solid #0F1B2D;font-size:16px;font-weight:700;padding:0 4px;min-height:24px;text-align:center">{{ f.terminal }}</div><div style="font-size:11px;color:#475569;margin-top:3px;text-align:center">Home Terminal Address</div></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:14px 40px;margin-top:16px">
+        <div><div style="border-bottom:1.5px solid #0F1B2D;font-size:16px;font-weight:700;padding:0 4px;min-height:24px">{{ f.driver }}</div><div style="font-size:11px;color:#475569;margin-top:3px">Driver Name</div></div>
+        <div><div style="border-bottom:1.5px solid #0F1B2D;font-size:16px;font-weight:600;padding:0 4px;min-height:24px;font-family:'Overpass Mono',monospace">{{ f.driverNo }}</div><div style="font-size:11px;color:#475569;margin-top:3px">Driver Number</div></div>
+        <div><div style="border-bottom:1.5px solid #0F1B2D;font-size:16px;font-weight:700;padding:0 4px;min-height:24px">{{ coLine }}</div><div style="font-size:11px;color:#475569;margin-top:3px">Co-Driver</div></div>
+      </div>
+
+      <div style="margin-top:30px;overflow-x:auto;-webkit-overflow-scrolling:touch">
+       <div style="min-width:{{ gridMin }}">
+        <div style="display:flex">
+          <div style="width:{{ lw }};flex:none"></div>
+          <div style="flex:1;position:relative;height:34px;background:#0F1B2D;color:#FFFFFF">
+            <sc-for list="{{ hours }}" as="h" hint-placeholder-count="25">
+              <div style="position:absolute;left:{{ h.l }};top:0;height:34px;width:36px;margin-left:{{ h.ml }};display:flex;align-items:center;justify-content:{{ h.jc }};text-align:{{ h.ta }};padding:2px 3px 0;font-size:11px;font-weight:700;line-height:1.05">{{ h.t }}</div>
+            </sc-for>
+          </div>
+          <div style="width:{{ rw }};flex:none;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:800;line-height:1.1;background:#0F1B2D;color:#FFFFFF;border-left:2px solid #FAF7F2;padding-top:2px">Total Hours</div>
+        </div>
+        <div style="display:flex">
+          <div style="width:{{ lw }};flex:none">
+            <sc-for list="{{ logRows }}" as="r" hint-placeholder-count="4">
+              <div style="height:{{ rowH }};display:flex;align-items:center;gap:8px;padding-right:10px;font-size:13px;font-weight:800;line-height:1.1">
+                <span style="width:5px;align-self:stretch;margin:7px 0;border-radius:2px;background:{{ r.c }};flex:none"></span>
+                <span>{{ r.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:1;position:relative;border:2px solid #0F1B2D">
+            <sc-for list="{{ logRows }}" as="r" hint-placeholder-count="4">
+              <div style="height:{{ r.h }};border-bottom:{{ r.bb }};background-color:#FAF7F2;background-image:linear-gradient(to right,#94A3B8 2px,transparent 2px),linear-gradient(to right,#94A3B8 1.5px,transparent 1.5px),linear-gradient(to right,#94A3B8 1px,transparent 1px);background-size:calc(100% / 24) 100%,calc(100% / 48) 55%,calc(100% / 96) 32%;background-repeat:repeat-x"></div>
+            </sc-for>
+            <sc-for list="{{ L.vlines }}" as="v" hint-placeholder-count="5">
+              <div style="position:absolute;left:{{ v.l }};top:{{ v.t }};height:{{ v.h }};width:2px;margin-left:-1px;background:#0F1B2D"></div>
+            </sc-for>
+            <sc-for list="{{ L.segs }}" as="s" hint-placeholder-count="6">
+              <div style="position:absolute;left:{{ s.l }};width:{{ s.w }};top:{{ s.t }};height:5px;margin-top:-2.5px;background:{{ s.c }};box-shadow:0 0 0 1px rgba(15,27,45,0.55)"></div>
+            </sc-for>
+          </div>
+          <div style="width:{{ rw }};flex:none">
+            <sc-for list="{{ logRows }}" as="r" hint-placeholder-count="4">
+              <div style="height:{{ rowH }};display:flex;align-items:flex-end;justify-content:center;padding:0 6px 6px">
+                <span style="width:100%;text-align:center;border-bottom:1.5px solid #0F1B2D;font-family:'Overpass Mono',monospace;font-size:15px;font-weight:700">{{ r.total }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end">
+          <div style="width:{{ rw }};padding:4px 6px 0"><div style="text-align:center;font-family:'Overpass Mono',monospace;font-size:15px;font-weight:800;border-bottom:4px double #0F1B2D;padding-bottom:2px">{{ L.sum }}</div></div>
+        </div>
+       </div>
+      </div>
+      <sc-if value="{{ m }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;color:#475569;margin-top:4px">Swipe the grid sideways to see the full 24 hours →</div></sc-if>
+
+      <div style="margin-top:4px;font-size:17px;font-weight:800">Remarks</div>
+      <div style="border-left:3px solid #0F1B2D;border-bottom:1.5px solid #0F1B2D;margin-top:8px;padding:0 0 16px 14px">
+        <sc-if value="{{ notM }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex">
+            <div style="width:{{ lwr }};flex:none"></div>
+            <div style="flex:1;position:relative;height:170px">
+              <sc-for list="{{ L.marks }}" as="mk" hint-placeholder-count="4">
+                <div>
+                  <div style="position:absolute;left:{{ mk.l }};width:{{ mk.w }};top:0;height:12px;border-left:2px solid #0F1B2D;border-right:2px solid #0F1B2D;border-bottom:{{ mk.bb }}"></div>
+                  <div style="position:absolute;left:{{ mk.mid }};top:18px;transform:rotate(55deg);transform-origin:0 0;white-space:nowrap;font-size:13px;font-weight:700">{{ mk.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="width:{{ rw }};flex:none"></div>
+          </div>
+        </sc-if>
+        <div style="display:flex;flex-direction:column">
+          <sc-for list="{{ L.changes }}" as="c" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;padding:7px 0 5px;border-bottom:1px dashed #94A3B8;font-size:14px">
+              <span style="font-family:'Overpass Mono',monospace;font-weight:700">{{ c.t }}</span>
+              <span style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><strong>{{ c.city }}</strong><span style="display:inline-flex;align-items:center;gap:6px;color:#334155"><span style="width:12px;height:4px;border-radius:2px;background:{{ c.c }};box-shadow:0 0 0 1px rgba(15,27,45,0.35)"></span>{{ c.what }}</span></span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top:20px;font-size:15px;font-weight:800;line-height:1.2">Shipping<br>Documents:</div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:12px;max-width:440px">
+          <div><div style="border-bottom:1.5px solid #0F1B2D;font-size:16px;font-weight:600;padding:0 4px;min-height:24px;font-family:'Overpass Mono',monospace">{{ f.ship }}</div><div style="font-size:12px;font-weight:700;margin-top:3px">DVL or Manifest No. or</div></div>
+          <div><div style="border-bottom:1.5px solid #0F1B2D;font-size:16px;font-weight:700;padding:0 4px;min-height:24px">Midwest Paper Co. • Paper rolls, 38,400 lb</div><div style="font-size:12px;font-weight:700;margin-top:3px">Shipper &amp; Commodity</div></div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:13px;font-weight:600;margin:12px auto 0;max-width:640px;text-wrap:pretty">Enter name of place you reported and where released from work and when and where each change of duty occurred. Use time standard of home terminal.</div>
+
+      <div style="margin-top:16px;border-top:2px solid #0F1B2D;padding-top:12px;display:flex;flex-wrap:wrap;gap:16px 22px;font-size:12px;line-height:1.3">
+        <div style="flex:1 1 210px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="font-weight:800;font-size:13px">Recap:<br>Complete at end of day</div>
+          <div><div style="font-family:'Overpass Mono',monospace;font-size:20px;font-weight:700;border-bottom:1.5px solid #0F1B2D">{{ L.rc.today }}</div><div style="color:#334155;margin-top:4px">On duty hours today, Total lines 3 &amp; 4</div></div>
+        </div>
+        <div style="flex:3 1 330px;display:grid;grid-template-columns:0.8fr 1fr 1fr 1fr;gap:10px;background:#FFFFFF;border:1.5px solid #0F1B2D;border-radius:4px;padding:10px">
+          <div style="font-weight:800;font-size:13px">70 Hour/<br>8 Day<br>Drivers</div>
+          <div><div style="font-size:13px;font-weight:800">A.</div><div style="font-family:'Overpass Mono',monospace;font-size:20px;font-weight:700;border-bottom:1.5px solid #0F1B2D">{{ L.rc.a }}</div><div style="color:#334155;margin-top:4px">Total hours on duty last 7 days including today.</div></div>
+          <div><div style="font-size:13px;font-weight:800">B.</div><div style="font-family:'Overpass Mono',monospace;font-size:20px;font-weight:700;border-bottom:1.5px solid #0F1B2D">{{ L.rc.b }}</div><div style="color:#334155;margin-top:4px">Total hours available tomorrow 70 hr. minus A*</div></div>
+          <div><div style="font-size:13px;font-weight:800">C.</div><div style="font-family:'Overpass Mono',monospace;font-size:20px;font-weight:700;border-bottom:1.5px solid #0F1B2D">{{ L.rc.c }}</div><div style="color:#334155;margin-top:4px">Total hours on duty last 5 days including today.</div></div>
+        </div>
+        <div style="flex:3 1 330px;display:grid;grid-template-columns:0.8fr 1fr 1fr 1fr;gap:10px;padding:10px;border:1.5px dashed #94A3B8;border-radius:4px;color:#64748B;position:relative">
+          <div><div style="font-weight:800;font-size:13px">60 Hour/<br>7 Day Drivers</div><div style="display:inline-block;margin-top:6px;border:1.5px solid #64748B;border-radius:3px;padding:2px 6px 0;font-size:11px;font-weight:800;letter-spacing:0.06em">NOT USED</div></div>
+          <div><div style="font-size:13px;font-weight:800">A.</div><div style="font-family:'Overpass Mono',monospace;font-size:20px;border-bottom:1.5px solid #94A3B8">—</div><div style="margin-top:4px">Total hours on duty last 8 days including today.</div></div>
+          <div><div style="font-size:13px;font-weight:800">B.</div><div style="font-family:'Overpass Mono',monospace;font-size:20px;border-bottom:1.5px solid #94A3B8">—</div><div style="margin-top:4px">Total hours available tomorrow 60 hr. minus A*</div></div>
+          <div><div style="font-size:13px;font-weight:800">C.</div><div style="font-family:'Overpass Mono',monospace;font-size:20px;border-bottom:1.5px solid #94A3B8">—</div><div style="margin-top:4px">Total hours on duty last 7 days including today.</div></div>
+        </div>
+        <div style="flex:1 1 120px;color:#334155">*If you took 34 consecutive hours off duty you have 60/70 hours available</div>
+      </div>
+    </div>
+  </div>
+</main>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;form&quot;,&quot;error&quot;,&quot;loading&quot;,&quot;results&quot;,&quot;log&quot;],&quot;default&quot;:&quot;form&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;detailsOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;mapTiles&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;esri&quot;,&quot;carto&quot;],&quot;default&quot;:&quot;esri&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const P = {
+  circle:'M16 4a12 12 0 1 0 0.01 0Z',
+  diamond:'M16 3L29 16L16 29L3 16Z',
+  us:'M5 4H27Q26 8 28 11Q29 22 16 29Q3 22 4 11Q6 8 5 4Z',
+  interstate:'M4 6Q10 3 16 6Q22 3 28 6L28 14Q28 25 16 30Q4 25 4 14Z',
+  square:'M9 4h14a5 5 0 0 1 5 5v14a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9a5 5 0 0 1 5-5Z',
+  pentagon:'M16 3L29 9V28H3V9Z',
+  octagon:'M10.6 3H21.4L29 10.6V21.4L21.4 29H10.6L3 21.4V10.6Z'
+};
+const KINDS = {
+  start:{name:'Current location',path:P.diamond,fill:'#F5A524',fg:'#0F1B2D',text:'#F5A524',g:'●',ty:'19.5',fs:'9',pt:'0.031em',fsz:'0.281em'},
+  pickup:{name:'Pickup',path:P.us,fill:'#14B8A6',fg:'#0F1B2D',text:'#2DD4BF',g:'P',ty:'19.5',fs:'12',pt:'0.031em',fsz:'0.375em'},
+  dropoff:{name:'Dropoff',path:P.interstate,fill:'#14B8A6',fg:'#0F1B2D',text:'#2DD4BF',g:'D',ty:'20',fs:'12',pt:'0.045em',fsz:'0.375em'},
+  fuel:{name:'Fuel stop',path:P.square,fill:'#14B8A6',fg:'#0F1B2D',text:'#2DD4BF',g:'F',ty:'20',fs:'12',pt:'0.045em',fsz:'0.375em'},
+  brk:{name:'30-min break',path:P.circle,fill:'#94A3B8',fg:'#0F1B2D',text:'#CBD5E1',g:'30',ty:'20',fs:'11',pt:'0.045em',fsz:'0.344em'},
+  rest:{name:'10-hr rest',path:P.pentagon,fill:'#6366F1',fg:'#FFFFFF',text:'#A5B4FC',g:'10',ty:'21.5',fs:'11',pt:'0.087em',fsz:'0.344em'},
+  restart:{name:'34-hr restart',path:P.octagon,fill:'#E5484D',fg:'#FFFFFF',text:'#FF8A8D',g:'34',ty:'20',fs:'11',pt:'0.045em',fsz:'0.344em'}
+};
+const CITIES = [
+  ['Chicago, IL','Illinois, USA'],['Chicago Heights, IL','Illinois, USA'],['Rockford, IL','Illinois, USA'],['Rock Island, IL','Illinois, USA'],['Indianapolis, IN','Indiana, USA'],
+  ['Denver, CO','Colorado, USA'],['Denton, TX','Texas, USA'],['Dallas, TX','Texas, USA'],['Detroit, MI','Michigan, USA'],['Des Moines, IA','Iowa, USA'],
+  ['Columbus, OH','Ohio, USA'],['Kansas City, MO','Missouri, USA'],['St. Louis, MO','Missouri, USA'],['Memphis, TN','Tennessee, USA'],['Nashville, TN','Tennessee, USA'],
+  ['Atlanta, GA','Georgia, USA'],['Omaha, NE','Nebraska, USA'],['Lincoln, NE','Nebraska, USA'],['Minneapolis, MN','Minnesota, USA'],['Louisville, KY','Kentucky, USA'],
+  ['Milwaukee, WI','Wisconsin, USA'],['Phoenix, AZ','Arizona, USA'],['Salt Lake City, UT','Utah, USA'],['Los Angeles, CA','California, USA'],['Laredo, TX','Texas, USA'],
+  ['Houston, TX','Texas, USA'],['Joliet, IL','Illinois, USA'],['4800 Dahlia St, Denver, CO','Commerce City • Colorado'],['2200 Harrison Ave, Rockford, IL','Shipper dock • Illinois']
+];
+const ROUTE = [[41.8781,-87.6298],[41.87,-87.9],[42.03,-88.28],[42.2711,-89.094],[41.95,-89.6],[41.52,-90.58],[41.66,-91.53],[41.6,-92.6],[41.59,-93.62],[41.5,-94.6],[41.2619,-95.8608],[41.25,-96.0],[40.8136,-96.7026],[40.83,-97.6],[40.7,-98.4],[40.7,-99.08],[41.12,-100.77],[41.13,-101.72],[40.98,-102.3],[40.63,-103.21],[40.2503,-103.7999],[39.9,-104.6],[39.7392,-104.9903]];
+const STOPS = [
+  {kind:'start',city:'Chicago, IL',time:'Thu, Oct 1 • 06:00',dur:'Start',ll:[41.8781,-87.6298]},
+  {kind:'pickup',city:'Rockford, IL',time:'Thu, Oct 1 • 08:00',dur:'1 h',drive:'2 h • 90 mi',ll:[42.2711,-89.094]},
+  {kind:'brk',city:'Council Bluffs, IA',time:'Thu, Oct 1 • 17:00',dur:'30 m',drive:'8 h • 440 mi',ll:[41.2619,-95.8608]},
+  {kind:'rest',city:'Lincoln, NE',time:'Thu, Oct 1 • 18:30',dur:'10 h',drive:'1 h • 55 mi',ll:[40.8136,-96.7026]},
+  {kind:'fuel',city:'Fort Morgan, CO',time:'Fri, Oct 2 • 12:00',dur:'30 m',drive:'7 h 30 m • 415 mi',ll:[40.2503,-103.7999]},
+  {kind:'dropoff',city:'Denver, CO',time:'Fri, Oct 2 • 13:45',dur:'1 h',drive:'1 h 15 m • 70 mi',ll:[39.7392,-104.9903]}
+];
+const DAYS = [
+  {n:1,date:'Thu, Oct 1',mm:'10',dd:'01',yy:'2026',from:'Chicago, IL',to:'Lincoln, NE',miles:585,
+   segs:[[0,0,6],[2,6,8],[3,8,9],[2,9,17],[0,17,17.5],[2,17.5,18.5],[1,18.5,24]],
+   marks:[[6,6,'Chicago, IL'],[8,9,'Rockford, IL • pickup'],[17,17.5,'Council Bluffs, IA • break'],[18.5,18.5,'Lincoln, NE • rest']],
+   changes:[['00:00','Chicago, IL','Off duty',0],['06:00','Chicago, IL','Driving, trip start',2],['08:00','Rockford, IL','On duty, pickup and loading',3],['09:00','Rockford, IL','Driving',2],['17:00','Council Bluffs, IA','Off duty, 30-min break',0],['17:30','Council Bluffs, IA','Driving',2],['18:30','Lincoln, NE','Sleeper berth, 10-hr rest',1]],
+   rc:{today:'12:00',a:'50:00',b:'20:00',c:'50:00'}},
+  {n:2,date:'Fri, Oct 2',mm:'10',dd:'02',yy:'2026',from:'Lincoln, NE',to:'Denver, CO',miles:485,
+   segs:[[1,0,4.5],[2,4.5,12],[3,12,12.5],[2,12.5,13.75],[3,13.75,14.75],[0,14.75,24]],
+   marks:[[4.5,4.5,'Lincoln, NE'],[12,12.5,'Fort Morgan, CO • fuel'],[13.75,14.75,'Denver, CO • dropoff']],
+   changes:[['00:00','Lincoln, NE','Sleeper berth, 10-hr rest continues',1],['04:30','Lincoln, NE','Driving',2],['12:00','Fort Morgan, CO','On duty, fueling',3],['12:30','Fort Morgan, CO','Driving',2],['13:45','Denver, CO','On duty, dropoff and unloading',3],['14:45','Denver, CO','Off duty, released from work',0]],
+   rc:{today:'10:15',a:'60:15',b:'9:45',c:'60:15'}}
+];
+const DIRS = [
+  {t:'Head west on I-290 W (Eisenhower Expressway) from Chicago, IL',d:'16 mi'},
+  {t:'Merge onto I-90 W (Jane Addams Tollway) toward Rockford',d:'62 mi'},
+  {t:'Take exit 63 for US-20 / Harrison Ave to the shipper',d:'12 mi'},
+  {k:'pickup',t:'Arrive at pickup • Rockford, IL',d:'1 h'},
+  {t:'Take I-39 S and I-88 W toward the Quad Cities',d:'105 mi'},
+  {t:'Merge onto I-80 W at Davenport, IA',d:'5 mi'},
+  {t:'Continue on I-80 W past Iowa City and Des Moines, IA',d:'205 mi'},
+  {t:'Continue on I-80 W to Council Bluffs, IA',d:'125 mi'},
+  {k:'brk',t:'30-min break • Council Bluffs, IA, exit 1B',d:'30 m'},
+  {t:'Continue on I-80 W across the Missouri River through Omaha, NE',d:'55 mi'},
+  {k:'rest',t:'10-hr rest • Lincoln, NE, exit 405 truck stop',d:'10 h'},
+  {t:'Continue on I-80 W past Grand Island and Kearney, NE',d:'130 mi'},
+  {t:'Continue on I-80 W to North Platte, NE',d:'95 mi'},
+  {t:'Keep left onto I-76 W toward Denver at Big Springs, NE',d:'80 mi'},
+  {t:'Continue on I-76 W past Sterling, CO',d:'110 mi'},
+  {k:'fuel',t:'Fuel • Fort Morgan, CO, exit 80',d:'30 m'},
+  {t:'Continue on I-76 W toward Denver',d:'62 mi'},
+  {t:'Take I-270 W, then local roads to the consignee',d:'8 mi'},
+  {k:'dropoff',t:'Arrive at dropoff • Denver, CO',d:'1 h'}
+];
+const ROWS = ['1. Off Duty','2. Sleeper Berth','3. Driving','4. On Duty (not driving)'];
+const ROWS_S = ['1. OFF','2. SB','3. D','4. ON'];
+const ROWC = ['#94A3B8','#6366F1','#F5A524','#14B8A6'];
+const LOAD = [['Finding addresses','3 found'],['Calculating the route','1,070 mi'],['Applying Hours of Service rules','70 hr / 8 day'],['Scheduling fuel, breaks and rest','5 stops'],['Filling daily log sheets','2 sheets']];
+const pct = x => (x*100).toFixed(4)+'%';
+const fmt = h => { const mm = Math.round(h*60); return Math.floor(mm/60)+':'+String(mm%60).padStart(2,'0'); };
+function lev(a,b){a=a.toLowerCase();b=b.toLowerCase();const d=[];for(let i=0;i<=a.length;i++)d[i]=[i];for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length];}
+function dayGeom(d){
+  const segs = d.segs.map(([r,a,b])=>({l:pct(a/24),w:pct((b-a)/24),t:pct((r+0.5)/4),c:ROWC[r]}));
+  const vlines = [];
+  for(let i=1;i<d.segs.length;i++){const p=d.segs[i-1],c=d.segs[i];if(p[0]!==c[0])vlines.push({l:pct(c[1]/24),t:pct((Math.min(p[0],c[0])+0.5)/4),h:pct(Math.abs(p[0]-c[0])/4)});}
+  const tot=[0,0,0,0]; d.segs.forEach(([r,a,b])=>tot[r]+=b-a);
+  return {segs,vlines,tot};
+}
+function markerSvg(kind,size){const k=KINDS[kind];return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,.6))"><path d="${k.path}" fill="${k.fill}" stroke="#0F1B2D" stroke-width="2.5"/><path d="${k.path}" fill="none" stroke="#fff" stroke-width="1.2" transform="translate(16 16) scale(0.84) translate(-16 -16)"/><text x="16" y="${k.ty}" text-anchor="middle" font-size="${k.fs}" font-weight="800" fill="${k.fg}" font-family="Overpass,sans-serif">${k.g}</text></svg>`;}
+
+class Component extends DCLogic {
+  mapRef = React.createRef();
+  constructor(props){
+    super(props);
+    const now = new Date(); now.setMinutes(Math.ceil(now.getMinutes()/15)*15,0,0);
+    const p2 = n => String(n).padStart(2,'0');
+    this.state = {
+      screen:'form', step:0, day:0, dirOpen:false, optOpen:props.detailsOpen??true, active:null, errors:{}, focusStop:null, forceW:null,
+      winW: typeof window!=='undefined'?window.innerWidth:1440,
+      f:{current:'Chicago, IL',pickup:'Rockford, IL',dropoff:'Denver, CO',cycle:38,
+         date:`${now.getFullYear()}-${p2(now.getMonth()+1)}-${p2(now.getDate())}`,time:`${p2(now.getHours())}:${p2(now.getMinutes())}`,
+         driver:'Marcus Delgado',driverNo:'D4471-2209',co:'',carrier:'Prairie Line Freight LLC',office:'2150 W Fulton St, Chicago, IL 60612',
+         terminal:'4400 S Pulaski Rd, Chicago, IL 60632',truck:'2417',trailer:'53-0918',ship:'BOL 7781-2290-RF'}
+    };
+  }
+  componentDidMount(){
+    this._rs = () => this.setState({winW:window.innerWidth});
+    window.addEventListener('resize', this._rs);
+    window.__eld = { show:(screen,w,extra)=>{ this.applyScreen(screen); this.setState({forceW:w||null,...(extra||{})}); window.scrollTo(0,0); } };
+    this.applyScreen(this.props.screen||'form');
+  }
+  componentWillUnmount(){ window.removeEventListener('resize',this._rs); clearInterval(this._iv); if(this.map){try{this.map.remove()}catch(e){} this.map=null;} }
+  componentDidUpdate(pp,ps){
+    if(pp.screen!==this.props.screen) this.applyScreen(this.props.screen||'form');
+    if(pp.detailsOpen!==this.props.detailsOpen) this.setState({optOpen:this.props.detailsOpen??true});
+    if(this.state.screen==='results') this.initMap();
+    if(this.map && (ps.forceW!==this.state.forceW || ps.winW!==this.state.winW)) setTimeout(()=>{ if(this.map){this.map.invalidateSize(); this.fit();} },60);
+  }
+  applyScreen(s){
+    clearInterval(this._iv);
+    if(s==='error'){ const f={...this.state.f,dropoff:'Denverr, CO'}; this.setState({f,screen:'form',errors:this.validate(f)}); return; }
+    const f={...this.state.f,dropoff:this.state.f.dropoff==='Denverr, CO'?'Denver, CO':this.state.f.dropoff};
+    if(s==='loading'){ this.setState({screen:'loading',errors:{},f}); return; }
+    this.setState({screen:s,errors:{},f});
+  }
+  validate(f){
+    const names = CITIES.map(c=>c[0].toLowerCase()); const errs={};
+    ['current','pickup','dropoff'].forEach(k=>{
+      const v=(f[k]||'').trim();
+      if(!v){ errs[k]={msg:'Enter a location.',sug:'Chicago, IL',fix:()=>this.fix(k,'Chicago, IL')}; return; }
+      if(!names.includes(v.toLowerCase())){
+        let best=CITIES[0][0],bd=1e9; CITIES.forEach(c=>{const d=lev(v,c[0]);if(d<bd){bd=d;best=c[0];}});
+        errs[k]={msg:`Couldn't find '${v}'. Check the spelling.`,sug:best,fix:()=>this.fix(k,best)};
+      }
+    });
+    return errs;
+  }
+  fix(k,v){ const errors={...this.state.errors}; delete errors[k]; this.setState({f:{...this.state.f,[k]:v},errors}); }
+  setF(k,v){ const errors={...this.state.errors}; delete errors[k]; this.setState({f:{...this.state.f,[k]:v},errors}); }
+  plan(){
+    const errors=this.validate(this.state.f);
+    if(Object.keys(errors).length){ this.setState({errors}); return; }
+    this.setState({screen:'loading',step:0,errors:{}}); window.scrollTo(0,0);
+    clearInterval(this._iv);
+    this._iv=setTimeout(()=>this.setState({screen:'results'}),2600);
+  }
+  fit(){ if(this.map) this.map.fitBounds(window.L.latLngBounds(ROUTE),{padding:[40,40]}); }
+  initMap(){
+    const el=this.mapRef.current; if(!el) return;
+    if(this.map && this.map.getContainer()===el && this._src===(this.props.mapTiles||'esri')) return;
+    if(!window.L){ clearTimeout(this._lt); this._lt=setTimeout(()=>this.initMap(),150); return; }
+    if(this.map){ try{this.map.remove()}catch(e){} this.map=null; }
+    const L=window.L;
+    const src=this.props.mapTiles||'esri'; this._src=src;
+    const map=L.map(el,{scrollWheelZoom:false,zoomSnap:0.25,fadeAnimation:false});
+    const Night = L.GridLayer.extend({ createTile(c, done){
+      const cv=document.createElement('canvas'); cv.width=cv.height=256; const ctx=cv.getContext('2d');
+      const load=u=>new Promise(r=>{const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>r(i); i.onerror=()=>r(null); i.src=u;});
+      const sd='abcd'[(c.x+c.y)%4], r2=window.devicePixelRatio>1?'@2x':'';
+      const carto = src==='carto', eb='https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+      const urls = carto ? [`https://${sd}.basemaps.cartocdn.com/dark_all/${c.z}/${c.x}/${c.y}${r2}.png`] : [`${eb}World_Dark_Gray_Base/MapServer/tile/${c.z}/${c.y}/${c.x}`,`${eb}World_Dark_Gray_Reference/MapServer/tile/${c.z}/${c.y}/${c.x}`];
+      Promise.all(urls.map(load)).then(imgs=>{
+        imgs.forEach(im=>{ if(im) ctx.drawImage(im,0,0,256,256); }); const lo=carto?0.04:0.15, rg=carto?0.7:0.6;
+        try{ const d=ctx.getImageData(0,0,256,256), p=d.data;
+          for(let i=0;i<p.length;i+=4){ const l=(0.299*p[i]+0.587*p[i+1]+0.114*p[i+2])/255; const v=Math.max(0,Math.min(1,(l-lo)/rg));
+            p[i]=15+v*(205-15); p[i+1]=27+v*(214-27); p[i+2]=45+v*(228-45); p[i+3]=255; }
+          ctx.putImageData(d,0,0);}catch(e){}
+        done(null,cv); });
+      return cv; } });
+    new Night({attribution:src==='carto'?'© OpenStreetMap contributors © CARTO':'Esri, HERE, Garmin, © OpenStreetMap contributors',maxZoom:src==='carto'?18:16}).addTo(map);
+    L.polyline(ROUTE,{color:'#F5A524',weight:14,opacity:0.18}).addTo(map);
+    L.polyline(ROUTE,{color:'#0F1B2D',weight:8,opacity:0.9}).addTo(map);
+    L.polyline(ROUTE,{color:'#F5A524',weight:4}).addTo(map);
+    this.markers=STOPS.map(s=>L.marker(s.ll,{icon:L.divIcon({className:'',html:markerSvg(s.kind,34),iconSize:[34,34],iconAnchor:[17,17],popupAnchor:[0,-16]})}).addTo(map).bindPopup(`<strong>${KINDS[s.kind].name}</strong><br>${s.city}<br>${s.time} • ${s.dur}`));
+    this.map=map; this.fit();
+  }
+  lane(){
+    const h=React.createElement;
+    return h('div',{style:{position:'relative',height:52,overflow:'hidden'}},
+      h('div',{style:{position:'absolute',left:0,right:0,top:34,height:4,backgroundImage:'repeating-linear-gradient(90deg,#F5A524 0 24px,transparent 24px 44px)',animation:'eldlane .45s linear infinite',opacity:0.9}}),
+      h('div',{style:{position:'absolute',top:4,left:'38%',animation:'eldbob .6s ease-in-out infinite'}},
+        h('div',{style:{position:'absolute',left:40,top:8,width:110,height:28,background:'radial-gradient(ellipse at left center,rgba(255,214,130,0.6),rgba(255,214,130,0) 70%)'}}),
+        h('svg',{width:48,height:34,viewBox:'0 0 44 32',style:{position:'relative'}},
+          h('g',{fill:'none',stroke:'#F5A524',strokeWidth:2.2,strokeLinecap:'round',strokeLinejoin:'round'},
+            h('rect',{x:2,y:6,width:24,height:16,rx:1.5,fill:'#15253B'}),
+            h('path',{d:'M26 11h8l6 6v5H26z',fill:'#15253B'}),
+            h('circle',{cx:9,cy:25,r:3,fill:'#0F1B2D'}),h('circle',{cx:20,cy:25,r:3,fill:'#0F1B2D'}),h('circle',{cx:35,cy:25,r:3,fill:'#0F1B2D'})))));
+  }
+  renderVals(){
+    const st=this.state, f=st.f, w=st.forceW||st.winW, m=w<760;
+    const go = s => e => { if(e&&e.preventDefault) e.preventDefault(); clearInterval(this._iv); this.setState({screen:s,errors:{}}); window.scrollTo(0,0); };
+    const err=st.errors;
+    const sugFor = k => { const q=(f[k]||'').trim().toLowerCase(); if(st.active!==k||!q) return []; const r=CITIES.filter(c=>c[0].toLowerCase().includes(q)); if(r.length===1&&r[0][0].toLowerCase()===q) return []; return r.slice(0,5).map(c=>({name:c[0],sub:c[1],pick:e=>{e.preventDefault(); this.setF(k,c[0]); this.setState({active:null});}})); };
+    const sc=sugFor('current'), sp=sugFor('pickup'), sd=sugFor('dropoff');
+    const nErr=Object.keys(err).length;
+    const cyc=Math.max(0,Math.min(70,Number(f.cycle)||0)), avail=70-cyc;
+    const optDefs=[['driver','Driver name','Full name'],['driverNo','Driver number','License or employee no.'],['co','Co-driver','None'],['carrier','Carrier name','Legal carrier name'],['office','Main office address','Street, city, state'],['terminal','Home terminal address','Street, city, state'],['truck','Truck / tractor number','e.g. 2417'],['trailer','Trailer number','e.g. 53-0918'],['ship','Shipping document number','BOL or manifest no.']];
+    const di=st.day, D=DAYS[di], g=dayGeom(D);
+    const L = {...D, segs:g.segs, vlines:g.vlines, sum:fmt(g.tot.reduce((a,b)=>a+b,0)),
+      marks:D.marks.map(([a,b,label])=>({l:pct(a/24),w:pct((b-a)/24),mid:pct((a+b)/48),bb:b>a?'2px solid #0F1B2D':'0',label})),
+      changes:D.changes.map(([t,city,what,r])=>({t,city,what,c:ROWC[r]}))};
+    const rowH = 44;
+    return {
+      rootW: st.forceW? st.forceW+'px':'100%', m, notM:!m,
+      pad: m?'16px':'32px', pagePad: m?'22px 16px 44px':'34px 32px 60px', cardPad: m?'18px':'28px', btnW: m?'100%':'auto',
+      mapH: m?'340px':'560px', tlH: m?'auto':'618px', sheetPad: m?'16px':'36px',
+      statNum: m?'30px':'42px', statGap: m?'14px 12px':'18px', postH: m?'14px':'22px',
+      lw: m?'112px':'170px', lwr:'156px', rw:'74px', rowH: rowH+'px', gridMin: m?'820px':'0',
+      isForm: st.screen==='form', isLoading: st.screen==='loading', isResults: st.screen==='results', isLog: st.screen==='log',
+      showNewTrip: st.screen!=='form',
+      goForm: go('form'), toResults: go('results'),
+      f, err, 
+      errorSummary: nErr===1? 'One location could not be matched to a real address. Check the highlighted field.' : `${nErr} locations could not be matched to real addresses. Check the highlighted fields.`,
+      bd:{current:err.current?'#E5484D':'#34507A',pickup:err.pickup?'#E5484D':'#34507A',dropoff:err.dropoff?'#E5484D':'#34507A'},
+      bg:{dropoff:err.dropoff?'rgba(229,72,77,0.08)':'#0F1B2D'},
+      onCurrent:e=>this.setF('current',e.target.value), onPickup:e=>this.setF('pickup',e.target.value), onDropoff:e=>this.setF('dropoff',e.target.value),
+      focCurrent:()=>this.setState({active:'current'}), focPickup:()=>this.setState({active:'pickup'}), focDropoff:()=>this.setState({active:'dropoff'}),
+      blur:()=>setTimeout(()=>this.setState({active:null}),120),
+      sug:{current:sc,pickup:sp,dropoff:sd,showCurrent:sc.length>0,showPickup:sp.length>0,showDropoff:sd.length>0},
+      onCycle:e=>this.setF('cycle',e.target.value), cyclePct: pct(cyc/70), cycleAvail: String(+avail.toFixed(2)),
+      availColor: avail<11?'#FF8A8D':'#A7B3C5',
+      onDate:e=>this.setF('date',e.target.value), onTime:e=>this.setF('time',e.target.value),
+      optOpen: st.optOpen, optRot: st.optOpen?'180deg':'0deg', toggleOpt:()=>this.setState({optOpen:!st.optOpen}),
+      optFields: optDefs.map(([k,label,ph])=>({label,ph,value:f[k],onChange:e=>this.setF(k,e.target.value)})),
+      rules:[{k:'Cycle',v:'70 hr / 8 days'},{k:'Driving limit',v:'11 hr per shift'},{k:'Duty window',v:'14 hr'},{k:'Break',v:'30 min after 8 hr driving'},{k:'Off-duty reset',v:'10 consecutive hr'},{k:'Cycle restart',v:'34 consecutive hr'},{k:'Fueling',v:'Every 1,000 mi max'},{k:'Pickup & dropoff',v:'1 hr on duty each'}],
+      plan:()=>this.plan(),
+      lane: this.laneEl || (this.laneEl=this.lane()),
+      mapRef:this.mapRef,
+      legend: ['start','pickup','dropoff','fuel','brk','rest','restart'].map(k=>({...KINDS[k],name:k==='restart'?'34-hr restart (not needed)':KINDS[k].name,lc:k==='restart'?'#A7B3C5':'#F1F4F8',op:k==='restart'?'0.75':'1'})),
+      stops: STOPS.map((s,i)=>({...s,k:KINDS[s.kind],rowBg:st.focusStop===i?'#1B2E48':'transparent',focus:()=>{ this.setState({focusStop:i}); if(this.map){ this.map.setView(s.ll,8); this.markers[i].openPopup(); } }})),
+      days: DAYS.map((d,i)=>{const gg=dayGeom(d);return {...d,segs:gg.segs,vlines:gg.vlines,miles:d.miles.toLocaleString(),tots:['Off duty','Sleeper','Driving','On duty'].map((k,j)=>({k,v:fmt(gg.tot[j]),c:ROWC[j]})),sum:fmt(gg.tot.reduce((a,b)=>a+b,0)),open:()=>{this.setState({screen:'log',day:i}); window.scrollTo(0,0);}};}),
+      openLog0: e=>{ if(e&&e.preventDefault) e.preventDefault(); this.setState({screen:'log',day:0}); window.scrollTo(0,0); },
+      dirOpen: st.dirOpen, dirRot: st.dirOpen?'180deg':'0deg', toggleDir:()=>this.setState({dirOpen:!st.dirOpen}),
+      dirCount: DIRS.filter(d=>!d.k).length,
+      directions: (()=>{let n=0;return DIRS.map(d=>d.k?{t:d.t,d:d.d,k:KINDS[d.k],num:null,weight:800}:{t:d.t,d:d.d,k:null,num:++n,weight:400});})(),
+      L, truckLine:`Tractor ${f.truck} • Trailer ${f.trailer}`, coLine: f.co||'None',
+      hours: Array.from({length:25},(_,i)=>({l:pct(i/24),ml:i===0?'0':i===24?'-36px':'-18px',jc:i===0?'flex-start':i===24?'flex-end':'center',ta:i===0?'left':i===24?'right':'center',t:(i===0||i===24)?'Mid-night':i===12?'Noon':String(i%12)})),
+      logRows: ROWS.map((label,i)=>({label,c:ROWC[i],total:fmt(g.tot[i]),h:(i<3?rowH-2:rowH-4)+'px',bb:i<3?'2px solid #94A3B8':'0'})),
+      dayTabs: DAYS.map((d,i)=>({n:d.n,date:d.date,miles:d.miles.toLocaleString(),go:()=>this.setState({day:i}),bg:i===di?'#F5A524':'#15253B',fg:i===di?'#0F1B2D':'#F1F4F8',bd:i===di?'#F5A524':'#34507A'})),
+      prevDay:()=>this.setState({day:Math.max(0,di-1)}), nextDay:()=>this.setState({day:Math.min(DAYS.length-1,di+1)}),
+      prevOp: di===0?'0.4':'1', nextOp: di===DAYS.length-1?'0.4':'1',
+      printIt:()=>window.print()
+    };
+  }
+}
+</script>
+</body>
+</html>
