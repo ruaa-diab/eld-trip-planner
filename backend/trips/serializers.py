@@ -3,6 +3,8 @@ from datetime import datetime
 
 from rest_framework import serializers
 
+from trips.services.routing import is_zip
+
 DETAIL_FIELDS = (
     "driver_name", "driver_number", "co_driver_name",
     "carrier_name", "main_office_address", "home_terminal_address",
@@ -48,7 +50,10 @@ LOCATION_MIN_CHARS = 3
 
 
 def validate_location_text(value):
-    """At least 3 characters and at least one letter, so a stray "C" or "123" is never geocoded."""
+    """A US ZIP (60632 or 60632-1234), or at least 3 characters with at least one letter,
+    so a stray "C" or "123" is never geocoded."""
+    if is_zip(value):
+        return
     if len(value) < LOCATION_MIN_CHARS or not any(ch.isalpha() for ch in value):
         raise serializers.ValidationError(LOCATION_MESSAGE)
 

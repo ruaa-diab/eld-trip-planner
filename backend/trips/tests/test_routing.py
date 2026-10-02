@@ -8,7 +8,7 @@ from django.test import SimpleTestCase, override_settings
 from trips.services import routing
 from trips.services.routing import (
     AddressNotFound, ApiKeyError, InvalidPlace, NoRouteFound, QuotaExceeded, RoutingError,
-    ServiceUnavailable, geocode, get_route,
+    ServiceUnavailable, geocode, get_route, is_zip,
 )
 
 CHICAGO = (41.88, -87.63, "Chicago, IL")
@@ -141,6 +141,60 @@ class GeocodeQualityTest(SimpleTestCase):
         req.return_value = pelias("locality", confidence=0.49)
         with self.assertRaises(AddressNotFound):
             geocode("Somewhere")
+
+
+def postal(code, locality="Chicago", region_a="IL", confidence=1, layer="postalcode"):
+    props = {"label": f"{code}, USA", "name": code, "postalcode": code, "layer": layer,
+             "confidence": confidence, "region_a": region_a}
+    if locality:
+        props["locality"] = locality
+    return response(body={"features": [{"geometry": {"coordinates": [-87.72, 41.81]}, "properties": props}]})
+
+
+class IsZipTest(SimpleTestCase):
+
+    def test_only_5_digits_or_zip_plus_4(self):
+        for text in ("60632", " 60632 ", "60632-1234", "00501"):
+            with self.subTest(text=text):
+                self.assertTrue(is_zip(text))
+        for text in ("6063", "606321", "60632-12", "606321234", "60632 1234", "60632-", "6063A", "", None):
+            with self.subTest(text=text):
+                self.assertFalse(is_zip(text))
+
+
+@override_settings(ORS_API_KEY="test-key")
+@mock.patch.object(routing.requests, "request")
+class GeocodeZipTest(SimpleTestCase):
+
+    def test_zip_with_city_is_labelled_with_city(self, req):
+        req.return_value = postal("60632")
+        self.assertEqual(geocode("60632"), (41.81, -87.72, "60632 (Chicago, IL)"))
+        self.assertEqual(req.call_args.kwargs["params"], {
+            "text": "60632", "size": 1, "boundary.country": "US", "layers": "postalcode",
+        })
+
+    def test_zip_plus_4_looks_up_the_5_digit_zip(self, req):
+        req.return_value = postal("60632")
+        self.assertEqual(geocode("60632-1234")[2], "60632-1234 (Chicago, IL)")
+        self.assertEqual(req.call_args.kwargs["params"]["text"], "60632")
+
+    def test_zip_without_city_is_labelled_zip(self, req):
+        # Live: 82190 (Yellowstone) has a state but no locality.
+        req.return_value = postal("82190", locality=None, region_a="WY")
+        self.assertEqual(geocode("82190")[2], "ZIP 82190")
+
+    def test_unknown_or_mismatched_zip_is_not_found(self, req):
+        cases = {
+            "no result": response(body={"features": []}),
+            "different zip": postal("60633"),
+            "not a postal code": postal("60632", layer="locality"),
+            "weak match": postal("60632", confidence=0.3),
+        }
+        for label, resp in cases.items():
+            with self.subTest(label):
+                req.return_value = resp
+                with self.assertRaisesRegex(AddressNotFound, "ZIP code not found: 60632"):
+                    geocode("60632")
 
 
 @override_settings(ORS_API_KEY="test-key")

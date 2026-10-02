@@ -34,7 +34,7 @@ const FIELDS = [
   {
     name: 'current_location',
     label: 'Current location',
-    placeholder: 'City or street address',
+    placeholder: 'City, street address or ZIP',
     marker: <CurrentMarker />,
     markerClass: 'route__marker--current',
   },

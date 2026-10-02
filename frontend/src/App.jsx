@@ -12,8 +12,14 @@ import { parseLocal } from './format.js'
 
 const LOCATION_FIELDS = ['current_location', 'pickup_location', 'dropoff_location']
 
-/** Same rule as the API: at least 3 characters and at least one letter (never geocode "C" or "123"). */
-export const isUsableLocation = (text) => text.trim().length >= 3 && /\p{L}/u.test(text)
+const ZIP_RE = /^\d{5}(-\d{4})?$/
+
+/**
+ * Same rule as the API: a US ZIP (60632 or 60632-1234), or at least 3 characters with at
+ * least one letter (never geocode "C" or "123").
+ */
+export const isUsableLocation = (text) =>
+  ZIP_RE.test(text.trim()) || (text.trim().length >= 3 && /\p{L}/u.test(text))
 
 function initialValues() {
   const { date, time } = nowLocal()

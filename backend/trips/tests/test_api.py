@@ -233,6 +233,26 @@ class PlanTripApiTest(SimpleTestCase):
         self.assertEqual(resp.json()["error"]["fields"]["current_location"], ["Enter a city or address"])
         self.request_mock.assert_not_called()
 
+    def test_us_zip_codes_are_accepted(self):
+        for text in ("60632", "60632-1234"):
+            with self.subTest(text=text):
+                self.fake.search["60632"] = ok({"features": [{
+                    "geometry": {"coordinates": [-87.72, 41.81]},
+                    "properties": {"label": "60632, Chicago, IL, USA", "name": "60632", "postalcode": "60632",
+                                   "layer": "postalcode", "confidence": 1, "locality": "Chicago", "region_a": "IL"},
+                }]})
+                resp = self.post(payload(current_location=text))
+                self.assertEqual(resp.status_code, 200, resp.content)
+                self.assertEqual(resp.json()["waypoints"][0]["label"], f"{text} (Chicago, IL)")
+
+    def test_other_all_digit_input_is_rejected(self):
+        for text in ("1234", "123456", "60632-12", "606321234", "60632 1234"):
+            with self.subTest(text=text):
+                resp = self.post(payload(current_location=text))
+                self.assertEqual(resp.status_code, 400)
+                self.assertEqual(resp.json()["error"]["fields"]["current_location"], ["Enter a city or address"])
+        self.request_mock.assert_not_called()
+
     def test_three_letters_is_enough(self):
         self.fake.search["Ccc"] = ok({"features": [{
             "geometry": {"coordinates": [-85.5, 33.6]},

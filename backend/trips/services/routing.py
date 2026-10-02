@@ -6,6 +6,7 @@ Endpoints on https://api.heigit.org (replaces the deprecated api.openrouteservic
 The API key goes in the Authorization header.
 """
 
+import re
 from dataclasses import dataclass, field
 
 import requests
@@ -23,6 +24,13 @@ TIMEOUT_SECONDS = 15
 # to a whole state scores 0.3, so 0.5 separates them.
 MIN_CONFIDENCE = 0.5
 ACCEPTED_LAYERS = {"locality", "county", "address", "street", "venue"}
+
+# US ZIP codes ("60632" or ZIP+4 "60632-1234") are looked up as postal codes.
+ZIP_RE = re.compile(r"^(\d{5})(-\d{4})?$")
+
+
+def is_zip(text):
+    return bool(ZIP_RE.match((text or "").strip()))
 
 # ORS routing error codes that mean "these places can't be routed".
 NO_ROUTE_MESSAGES = {
@@ -136,6 +144,8 @@ def geocode(text):
     text = (text or "").strip()
     if not text:
         raise AddressNotFound("Enter an address.")
+    if is_zip(text):
+        return _geocode_zip(text)
 
     data = request_json("GET", GEOCODE_PATH, params={
         "text": text,
@@ -157,6 +167,30 @@ def geocode(text):
 
     lon, lat = feature["geometry"]["coordinates"][:2]
     label = short_label(props.get("label") or text)
+    return lat, lon, label
+
+
+def _geocode_zip(text):
+    """US ZIP (or ZIP+4) → (lat, lon, "60632 (Chicago, IL)" or "ZIP 82190")."""
+    zip5 = ZIP_RE.match(text).group(1)
+    data = request_json("GET", GEOCODE_PATH, params={
+        "text": zip5,
+        "size": 1,
+        "boundary.country": "US",
+        "layers": "postalcode",
+    })
+    features = data.get("features") or []
+    props = (features[0].get("properties") or {}) if features else {}
+    confidence = props.get("confidence")
+    # Never guess: the match must be this exact ZIP, with good confidence.
+    if (not features or props.get("layer") != "postalcode"
+            or (props.get("postalcode") or props.get("name")) != zip5
+            or (confidence is not None and confidence < MIN_CONFIDENCE)):
+        raise AddressNotFound(f"ZIP code not found: {text}")
+
+    lon, lat = features[0]["geometry"]["coordinates"][:2]
+    city, state = props.get("locality"), props.get("region_a")
+    label = f"{text} ({city}, {state})" if city and state else f"ZIP {text}"
     return lat, lon, label
 
 
