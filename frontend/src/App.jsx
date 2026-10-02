@@ -7,6 +7,7 @@ import LoadingScreen from './components/LoadingScreen.jsx'
 import { nowLocal } from './components/StartFields.jsx'
 import TripForm from './components/TripForm.jsx'
 import ResultsPage from './components/results/ResultsPage.jsx'
+import LogViewer, { PrintLogs } from './components/logs/LogViewer.jsx'
 import { parseLocal } from './format.js'
 
 const LOCATION_LABELS = {
@@ -81,7 +82,8 @@ function errorsFromApi(err, values) {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState('form') // form | loading | result
+  const [screen, setScreen] = useState('form') // form | loading | result | logs
+  const [logDay, setLogDay] = useState(0)
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState({})
   const [generalError, setGeneralError] = useState(null)
@@ -170,8 +172,29 @@ export default function App() {
         />
       )}
       {screen === 'result' && result && (
-        <ResultsPage plan={result.plan} departure={result.departure} onEdit={backToForm} />
+        <ResultsPage
+          plan={result.plan}
+          departure={result.departure}
+          onEdit={backToForm}
+          onOpenLogs={(day) => {
+            setLogDay(day)
+            setScreen('logs')
+            window.scrollTo(0, 0)
+          }}
+        />
       )}
+      {screen === 'logs' && result && (
+        <LogViewer
+          plan={result.plan}
+          day={logDay}
+          onDay={setLogDay}
+          onBack={() => {
+            setScreen('result')
+            window.scrollTo(0, 0)
+          }}
+        />
+      )}
+      {(screen === 'result' || screen === 'logs') && result && <PrintLogs plan={result.plan} />}
     </>
   )
 }

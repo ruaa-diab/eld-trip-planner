@@ -1,0 +1,734 @@
+/* ── Paper sheet (v3 design) ── */
+
+.sheet {
+  --paper: #faf7f2;
+  --ink: #0f1b2d;
+  --ink-muted: #475569;
+  --ink-soft: #334155;
+  --rule: #94a3b8;
+
+  margin-top: 18px;
+  padding: 36px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.sheet .mono {
+  font-family: var(--font-mono);
+}
+
+.sheet__top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px 28px;
+}
+
+.sheet__title {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.sheet__muted {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+
+.sheet__date {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.sheet__date-part {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  text-align: center;
+}
+
+.sheet__date-slash {
+  padding-bottom: 18px;
+  font-size: 20px;
+}
+
+.sheet__date-value {
+  min-width: 48px;
+  padding: 0 6px;
+  border-bottom: 1.5px solid var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.sheet__date-label {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.sheet__copies {
+  max-width: 290px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
+.sheet__copies strong {
+  color: var(--ink);
+}
+
+.sheet__fromto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px 40px;
+  margin-top: 22px;
+}
+
+.sheet__inline {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.sheet__inline-label {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.sheet__inline-value {
+  flex: 1;
+  padding: 0 4px;
+  border-bottom: 1.5px solid var(--ink);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.sheet__header-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 18px 40px;
+  margin-top: 22px;
+}
+
+.sheet__col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sheet__miles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sheet__mile-box {
+  padding: 10px 6px 6px;
+  border: 1.5px solid var(--ink);
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.sheet-line__value {
+  min-height: 24px;
+  padding: 0 4px;
+  border-bottom: 1.5px solid var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Empty optional field: muted dash. */
+.sheet-line__value--blank {
+  color: var(--rule);
+  font-weight: 400;
+}
+
+.sheet-line__label {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.sheet-line__label--center,
+.sheet-line--center .sheet-line__label,
+.sheet-line--center .sheet-line__value {
+  text-align: center;
+}
+
+.sheet-line--big .sheet-line__value {
+  font-size: 18px;
+}
+
+.sheet-line--strong-label .sheet-line__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.sheet__people {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 14px 40px;
+  margin-top: 16px;
+}
+
+/* ── Grid ── */
+
+.sheet__grid-scroll {
+  margin-top: 30px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheet__grid-inner {
+  min-width: 0;
+}
+
+.log-grid,
+.log-marks {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.log-grid__hour {
+  font-size: 11px;
+  font-weight: 800;
+  fill: #ffffff;
+}
+
+.log-grid__total-head {
+  font-size: 11px;
+  font-weight: 800;
+  fill: #ffffff;
+}
+
+.log-grid__row-label {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.log-grid__total {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.sheet__swipe {
+  display: none;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+/* ── Remarks ── */
+
+.sheet__remarks-title {
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.sheet__remarks {
+  margin-top: 8px;
+  padding: 0 0 16px 14px;
+  border-left: 3px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+}
+
+.log-marks {
+  /* Same x scale as the grid; the left border + padding of .sheet__remarks is 17px. */
+  margin-left: -17px;
+  width: calc(100% + 17px);
+}
+
+.log-marks__label {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.sheet__remark-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sheet__remark {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px 14px;
+  align-items: baseline;
+  padding: 8px 4px 6px;
+  border-bottom: 1px dashed var(--rule);
+  font-size: 14px;
+}
+
+.sheet__remark-time {
+  font-weight: 700;
+}
+
+.sheet__remark-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+.sheet__remark-desc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+}
+
+.sheet__chip {
+  width: 12px;
+  height: 4px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(15, 27, 45, 0.25);
+}
+
+.sheet__ship-title {
+  margin-top: 20px;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.sheet__ship {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 440px;
+  margin-top: 12px;
+}
+
+.sheet__instructions {
+  max-width: 640px;
+  margin: 12px auto 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  text-wrap: pretty;
+}
+
+.sheet__tz {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+/* ── Recap ── */
+
+.recap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 24px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 2px solid var(--ink);
+  font-size: 12px;
+}
+
+.recap__today {
+  flex: 1 1 210px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.recap__title {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.recap__box {
+  flex: 3 1 330px;
+  display: grid;
+  grid-template-columns: 70px repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+}
+
+.recap__box--unused {
+  border: 1.5px dashed var(--rule);
+  color: var(--ink-muted);
+}
+
+.recap__key {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.recap__value {
+  border-bottom: 1.5px solid var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.recap__box--unused .recap__value {
+  border-color: var(--rule);
+  font-weight: 400;
+}
+
+.recap__label {
+  margin-top: 4px;
+  color: var(--ink-soft);
+}
+
+.recap__box--unused .recap__label {
+  color: var(--ink-muted);
+}
+
+.recap__not-used {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 2px 6px 0;
+  border: 1.5px solid var(--ink-muted);
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.recap__note {
+  flex: 1 1 120px;
+  color: var(--ink-soft);
+}
+
+/* ── Mini sheets (results page) ── */
+
+.mini-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #faf7f2;
+  border-radius: var(--radius);
+  background: #faf7f2;
+  color: var(--bg);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.mini-sheet:hover {
+  box-shadow: 0 0 0 2px var(--accent), 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.mini-sheet__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.mini-sheet__day {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.mini-sheet__miles {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #475569;
+}
+
+.mini-sheet__route {
+  margin-top: -6px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.mini-grid {
+  display: block;
+  width: 100%;
+  height: 64px;
+}
+
+.mini-sheet__totals {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border: 1.5px solid var(--bg);
+  font-size: 12px;
+  color: #475569;
+}
+
+.mini-sheet__total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px 4px;
+  border-right: 1px solid #94a3b8;
+}
+
+.mini-sheet__total strong {
+  color: var(--bg);
+  font-size: 14px;
+}
+
+.mini-sheet__total-key {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.mini-sheet__swatch {
+  width: 10px;
+  height: 4px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(15, 27, 45, 0.35);
+}
+
+.mini-sheet__total--sum {
+  border-right: 0;
+  background: var(--bg);
+  color: #c3cedd;
+}
+
+.mini-sheet__total--sum strong {
+  color: #ffffff;
+}
+
+/* ── Viewer ── */
+
+.viewer__back {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.viewer__top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px 16px;
+  margin: 10px 0 18px;
+}
+
+.viewer__title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.viewer__sub {
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.viewer__print {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 3px 18px 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.viewer__print svg {
+  margin-top: -2px;
+  color: var(--accent);
+}
+
+.viewer__print:hover {
+  background: var(--surface-raised);
+}
+
+.viewer__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewer__arrow {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.viewer__arrow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.viewer__current {
+  flex: none;
+  min-width: 110px;
+  padding: 0 10px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.viewer__current-n {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.viewer__current-date {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.viewer__tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.viewer__tab {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  padding: 3px 14px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.viewer__tab:hover {
+  background: var(--surface-raised);
+}
+
+.viewer__tab--active,
+.viewer__tab--active:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* ── Mobile ── */
+
+@media (max-width: 759px) {
+  .sheet {
+    padding: 16px;
+  }
+
+  /* Draw the grid at its natural size (1:1 with the viewBox) and scroll sideways. */
+  .sheet__grid-inner {
+    min-width: 1112px;
+  }
+
+  .sheet__swipe {
+    display: block;
+  }
+
+  /* As in the design, the bracket labels are only drawn when the full grid is visible. */
+  .log-marks {
+    display: none;
+  }
+
+  .viewer__tabs {
+    display: none;
+  }
+
+  .viewer__top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ── Print: every day, one sheet per page, white paper ── */
+
+.print-logs {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 0.4in;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  body > #root > :not(.print-logs) {
+    display: none !important;
+  }
+
+  .print-logs {
+    display: block;
+  }
+
+  .print-logs__page {
+    break-after: page;
+  }
+
+  .print-logs__page:last-child {
+    break-after: auto;
+  }
+
+  /* Lay the sheet out at desktop width, then scale it to the page so it keeps the
+     wide layout (the print page is narrower than the mobile breakpoint). */
+  .print-logs .sheet {
+    width: 1150px;
+    zoom: 0.58;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    box-shadow: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-logs .sheet__remark {
+    padding: 4px 4px 3px;
+  }
+
+  .print-logs .sheet__grid-inner {
+    min-width: 0;
+  }
+
+  .print-logs .log-marks {
+    display: block;
+  }
+
+  .print-logs .sheet__swipe {
+    display: none;
+  }
+}

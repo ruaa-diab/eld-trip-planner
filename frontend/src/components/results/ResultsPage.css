@@ -368,51 +368,8 @@
   gap: 16px;
 }
 
-/* Paper card, same look as the log sheet that replaces the placeholder in step 4. */
-.mini-sheet {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 16px;
-  border-radius: var(--radius);
-  background: #faf7f2;
-  color: var(--bg);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-}
-
-.mini-sheet__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.mini-sheet__day {
-  font-size: 16px;
-  font-weight: 800;
-}
-
-.mini-sheet__miles {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: #475569;
-}
-
-.mini-sheet__route {
-  margin-top: -6px;
-  font-size: 14px;
-  color: #475569;
-}
-
-.mini-sheet__placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 118px;
-  border: 1.5px dashed #94a3b8;
-  border-radius: 4px;
-  color: #475569;
-  font-size: 14px;
+.results__logs-link {
+  font-weight: 700;
 }
 
 /* ── Directions ── */

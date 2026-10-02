@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
-import { formatClock, formatDay, formatDayLong, formatMiles, isBlank, parseLocal } from '../../format.js'
+import { formatClock, formatDayLong, isBlank } from '../../format.js'
+import MiniSheet from '../logs/MiniSheet.jsx'
 import Directions from './Directions.jsx'
 import StatSigns from './StatSigns.jsx'
 import RouteMap from './RouteMap.jsx'
@@ -14,30 +15,12 @@ function Subtitle({ plan }) {
   return <div className="results__sub">{parts.join(' • ')}</div>
 }
 
-/** Stand-in for the mini log sheet drawn in step 4. */
-function SheetPlaceholder({ sheet, index }) {
-  return (
-    <div className="mini-sheet">
-      <div className="mini-sheet__head">
-        <span className="mini-sheet__day">
-          Day {index + 1} • {formatDay(parseLocal(sheet.date))}
-        </span>
-        <span className="mini-sheet__miles">{formatMiles(sheet.miles)} mi</span>
-      </div>
-      <div className="mini-sheet__route">
-        {sheet.from} → {sheet.to}
-      </div>
-      <div className="mini-sheet__placeholder">Log grid and totals (step 4)</div>
-    </div>
-  )
-}
-
 /**
  * plan: the /api/plan-trip response.
  * departure: Date of the start time the driver entered (the API does not echo it).
+ * onOpenLogs(dayIndex): open the log viewer at that day.
  */
-export default function ResultsPage({ plan, departure, onEdit }) {
-  const logsRef = useRef(null)
+export default function ResultsPage({ plan, departure, onEdit, onOpenLogs }) {
   const mapRef = useRef(null)
   const items = useMemo(() => buildTimeline(plan, departure), [plan, departure])
   // { index, source: 'timeline' | 'map' }; a new object each click so re-clicking re-centers.
@@ -71,11 +54,7 @@ export default function ResultsPage({ plan, departure, onEdit }) {
             <button type="button" className="btn btn--ghost" onClick={onEdit}>
               Edit trip
             </button>
-            <button
-              type="button"
-              className="btn btn--primary"
-              onClick={() => logsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            >
+            <button type="button" className="btn btn--primary" onClick={() => onOpenLogs(0)}>
               View daily logs
             </button>
           </div>
@@ -97,16 +76,26 @@ export default function ResultsPage({ plan, departure, onEdit }) {
 
         <div className="lane-line results__divider" aria-hidden="true" />
 
-        <section ref={logsRef} className="results__logs" aria-labelledby="logs-title">
+        <section className="results__logs" aria-labelledby="logs-title">
           <div className="results__logs-head">
             <h2 className="badge badge--numbered" id="logs-title">
               <span className="badge__num">{plan.sheets.length}</span>
               Daily log sheets
             </h2>
+            <a
+              href="#"
+              className="results__logs-link"
+              onClick={(e) => {
+                e.preventDefault()
+                onOpenLogs(0)
+              }}
+            >
+              Open log viewer →
+            </a>
           </div>
           <div className="results__sheets">
             {plan.sheets.map((sheet, i) => (
-              <SheetPlaceholder key={sheet.date} sheet={sheet} index={i} />
+              <MiniSheet key={sheet.date} sheet={sheet} index={i} onOpen={() => onOpenLogs(i)} />
             ))}
           </div>
         </section>
