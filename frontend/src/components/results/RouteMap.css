@@ -1,0 +1,155 @@
+.route-map {
+  flex: 1 1 620px;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.route-map__canvas {
+  height: var(--map-h);
+}
+
+.route-map__canvas .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #16202e;
+  font-family: var(--font);
+}
+
+/* Darken OpenStreetMap tiles to the navy theme (tiles only, not the route or markers). */
+.map-tiles {
+  filter: invert(1) hue-rotate(190deg) brightness(0.78) contrast(0.92) saturate(0.35);
+}
+
+/* ── Markers ── */
+
+.map-marker {
+  background: none;
+  border: 0;
+}
+
+.map-marker svg {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.55));
+  transition: transform 0.15s;
+}
+
+.map-marker--selected svg {
+  transform: scale(1.25);
+  filter: drop-shadow(0 0 6px rgba(245, 165, 36, 0.9));
+}
+
+/* ── Popups ── */
+
+.route-map .leaflet-popup-content-wrapper,
+.route-map .leaflet-popup-tip {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--accent);
+}
+
+.route-map .leaflet-popup-content-wrapper {
+  border-radius: var(--radius);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+.route-map .leaflet-popup-content {
+  margin: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.route-map .leaflet-container a.leaflet-popup-close-button {
+  color: var(--text-muted);
+}
+
+.map-popup__stop + .map-popup__stop {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.map-popup__kind {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.map-popup__name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.map-popup__time {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.map-popup__tag {
+  margin-left: 4px;
+  padding: 1px 6px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* ── Controls and attribution ── */
+
+.route-map .leaflet-bar a {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.route-map .leaflet-bar a:hover {
+  background: var(--surface-raised);
+}
+
+.route-map .leaflet-control-attribution {
+  background: rgba(15, 27, 45, 0.8);
+  color: var(--text-muted);
+}
+
+.route-map .leaflet-control-attribution a {
+  color: var(--accent);
+}
+
+/* ── Legend ── */
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0;
+  padding: 12px 16px 10px;
+  border-top: 1px solid var(--border);
+  list-style: none;
+  font-size: 13px;
+}
+
+.map-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-legend__route {
+  width: 24px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(245, 165, 36, 0.6);
+}
+
+.map-legend__unused {
+  color: var(--text-muted);
+}
+
+.map-legend__unused svg {
+  opacity: 0.5;
+}

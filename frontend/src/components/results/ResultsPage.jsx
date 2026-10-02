@@ -1,8 +1,9 @@
-import { useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { formatClock, formatDay, formatDayLong, formatMiles, isBlank, parseLocal } from '../../format.js'
 import Directions from './Directions.jsx'
 import StatSigns from './StatSigns.jsx'
-import StopTimeline from './StopTimeline.jsx'
+import RouteMap from './RouteMap.jsx'
+import StopTimeline, { buildTimeline } from './StopTimeline.jsx'
 import './ResultsPage.css'
 
 function Subtitle({ plan }) {
@@ -37,8 +38,21 @@ function SheetPlaceholder({ sheet, index }) {
  */
 export default function ResultsPage({ plan, departure, onEdit }) {
   const logsRef = useRef(null)
+  const mapRef = useRef(null)
+  const items = useMemo(() => buildTimeline(plan, departure), [plan, departure])
+  // { index, source: 'timeline' | 'map' }; a new object each click so re-clicking re-centers.
+  const [selected, setSelected] = useState(null)
   const from = plan.waypoints[0].label
   const to = plan.waypoints[2].label
+
+  const selectFromTimeline = (index) => {
+    // On narrow screens the map is above the timeline: bring it into view first.
+    const box = mapRef.current?.getBoundingClientRect()
+    if (box && (box.top < 0 || box.bottom > window.innerHeight)) {
+      mapRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+    setSelected({ index, source: 'timeline' })
+  }
 
   return (
     <main className="page">
@@ -70,10 +84,15 @@ export default function ResultsPage({ plan, departure, onEdit }) {
         <StatSigns summary={plan.summary} sheets={plan.sheets} />
 
         <div className="results__main">
-          <div className="results__map placeholder-box">
-            <span>Route map (step 3)</span>
+          <div className="results__map" ref={mapRef}>
+            <RouteMap
+              geometry={plan.geometry}
+              items={items}
+              selected={selected}
+              onSelect={(index) => setSelected({ index, source: 'map' })}
+            />
           </div>
-          <StopTimeline plan={plan} departure={departure} />
+          <StopTimeline items={items} days={plan.summary.days} selected={selected} onSelect={selectFromTimeline} />
         </div>
 
         <div className="lane-line results__divider" aria-hidden="true" />

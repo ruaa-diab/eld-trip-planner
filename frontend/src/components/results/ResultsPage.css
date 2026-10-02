@@ -200,7 +200,7 @@
 .results__map {
   flex: 1 1 620px;
   min-width: 0;
-  height: var(--map-h);
+  display: flex;
 }
 
 .placeholder-box {
@@ -274,12 +274,27 @@
 }
 
 .timeline__stop {
+  width: 100%;
   display: grid;
   grid-template-columns: 30px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: start;
   padding: 10px 8px 8px;
+  border: 0;
   border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.timeline__stop:hover,
+.timeline__stop--selected {
+  background: var(--surface-raised);
+}
+
+.timeline__stop--selected {
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .timeline__body {

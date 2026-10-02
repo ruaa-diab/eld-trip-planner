@@ -1,4 +1,5 @@
 // Stop icons from the v3 design: road-sign shapes with a white inner outline and a glyph.
+// One SVG definition serves both the timeline (React) and the map markers (Leaflet divIcon HTML).
 
 const PATHS = {
   circle: 'M16 4a12 12 0 1 0 0.01 0Z',
@@ -21,20 +22,28 @@ export const STOP_KINDS = {
   restart_34: { name: '34-hr restart', path: 'octagon', fill: '#E5484D', fg: '#FFFFFF', text: '#FF8A8D', glyph: '34', ty: 20, fs: 11 },
 }
 
-export default function StopIcon({ kind, size = 30 }) {
+/** SVG markup for a stop icon (static strings only, no user input). */
+export function stopIconSvg(kind, size = 30) {
   const k = STOP_KINDS[kind]
   const d = PATHS[k.path]
+  const center = k.glyph
+    ? `<text x="16" y="${k.ty}" text-anchor="middle" font-size="${k.fs}" font-weight="800" fill="${k.fg}" font-family="Overpass, sans-serif">${k.glyph}</text>`
+    : `<circle cx="16" cy="16" r="3.5" fill="${k.fg}"/>`
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" style={{ display: 'block', flex: 'none' }}>
-      <path d={d} fill={k.fill} stroke="#0F1B2D" strokeWidth="2.5" />
-      <path d={d} fill="none" stroke="#FFFFFF" strokeWidth="1.2" transform="translate(16 16) scale(0.84) translate(-16 -16)" />
-      {k.glyph ? (
-        <text x="16" y={k.ty} textAnchor="middle" fontSize={k.fs} fontWeight="800" fill={k.fg} fontFamily="Overpass, sans-serif">
-          {k.glyph}
-        </text>
-      ) : (
-        <circle cx="16" cy="16" r="3.5" fill={k.fg} />
-      )}
-    </svg>
+    `<svg width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true" style="display:block">` +
+    `<path d="${d}" fill="${k.fill}" stroke="#0F1B2D" stroke-width="2.5"/>` +
+    `<path d="${d}" fill="none" stroke="#FFFFFF" stroke-width="1.2" transform="translate(16 16) scale(0.84) translate(-16 -16)"/>` +
+    center +
+    `</svg>`
+  )
+}
+
+export default function StopIcon({ kind, size = 30 }) {
+  return (
+    <span
+      className="stop-icon"
+      style={{ display: 'block', flex: 'none', width: size, height: size }}
+      dangerouslySetInnerHTML={{ __html: stopIconSvg(kind, size) }}
+    />
   )
 }
