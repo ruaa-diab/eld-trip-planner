@@ -1,3 +1,5 @@
+import LocationInput from './LocationInput.jsx'
+
 function CurrentMarker() {
   return (
     <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
@@ -61,17 +63,17 @@ export default function RouteFields({ values, errors, onChange }) {
             <label className="label" htmlFor={f.name}>
               {f.label}
             </label>
-            <input
+            <LocationInput
               id={f.name}
-              name={f.name}
-              className="input"
               value={values[f.name]}
-              onChange={(e) => onChange(f.name, e.target.value)}
-              placeholder={f.placeholder}
-              autoComplete="off"
-              maxLength={200}
-              aria-invalid={errors[f.name] ? 'true' : undefined}
-              aria-describedby={errors[f.name] ? `${f.name}-error` : undefined}
+              onChange={(v) => onChange(f.name, v)}
+              inputProps={{
+                name: f.name,
+                placeholder: f.placeholder,
+                maxLength: 200,
+                'aria-invalid': errors[f.name] ? 'true' : undefined,
+                'aria-describedby': errors[f.name] ? `${f.name}-error` : undefined,
+              }}
             />
             {errors[f.name] && (
               <div className="field-error" id={`${f.name}-error`}>

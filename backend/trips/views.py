@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from trips.serializers import PlanTripSerializer
 from trips.services import planner
+from trips.services.autocomplete import suggest
 from trips.services.routing import (
     ApiKeyError, NoRouteFound, QuotaExceeded, RoutingError, ServiceUnavailable,
 )
@@ -22,6 +23,13 @@ def error_response(status, code, message, fields=None):
 @api_view(["GET"])
 def health_check(request):
     return Response({"status": "ok"})
+
+
+@api_view(["GET"])
+def autocomplete(request):
+    """Address suggestions; always 200, empty when unavailable."""
+    labels = suggest(request.query_params.get("text", ""))
+    return Response({"suggestions": [{"label": label} for label in labels]})
 
 
 @api_view(["POST"])

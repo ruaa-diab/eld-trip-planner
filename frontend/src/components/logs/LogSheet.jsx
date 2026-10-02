@@ -32,7 +32,7 @@ function remarkMarks(sheet, isTripStart) {
     marks.push({
       x1: minuteX(r.minute),
       x2: bracket ? minuteX(seg.end_min) : null,
-      label: start && !word ? r.location : `${r.location} • ${word}`,
+      label: `${r.location} • ${word || 'start'}`,
     })
   })
   return marks

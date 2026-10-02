@@ -15,6 +15,22 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * GET /api/autocomplete. Resolves with up to 5 labels; any failure resolves with [] (suggestions
+ * are optional). Rejects only with AbortError when a newer request cancelled this one.
+ */
+export async function fetchSuggestions(text, signal) {
+  try {
+    const resp = await fetch(`${API_URL}/api/autocomplete?text=${encodeURIComponent(text)}`, { signal })
+    if (!resp.ok) return []
+    const body = await resp.json()
+    return Array.isArray(body?.suggestions) ? body.suggestions.map((s) => s.label).filter(Boolean) : []
+  } catch (err) {
+    if (err.name === 'AbortError') throw err
+    return []
+  }
+}
+
 /** POST /api/plan-trip. Resolves with the plan; rejects with ApiError (or AbortError when cancelled). */
 export async function planTrip(payload, signal) {
   let resp

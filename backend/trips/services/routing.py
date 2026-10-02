@@ -138,10 +138,14 @@ def geocode(text):
 
     feature = features[0]
     lon, lat = feature["geometry"]["coordinates"][:2]
-    label = feature.get("properties", {}).get("label") or text
-    if label.endswith(", USA"):
-        label = label[:-len(", USA")]
+    label = short_label(feature.get("properties", {}).get("label") or text)
     return lat, lon, label
+
+
+def short_label(label):
+    """Pelias label in our "City, ST" style: "Chicago, IL, USA" → "Chicago, IL"."""
+    label = label.strip()
+    return label[:-len(", USA")] if label.endswith(", USA") else label
 
 
 def get_route(current, pickup, dropoff):

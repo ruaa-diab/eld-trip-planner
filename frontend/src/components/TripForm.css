@@ -398,3 +398,53 @@
     width: 100%;
   }
 }
+
+/* ── Address suggestions (design: dropdown under the field) ── */
+
+.suggest {
+  position: relative;
+}
+
+.suggest__list {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+
+.suggest__option {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.suggest__option--active {
+  background: var(--surface-hover);
+}
+
+.suggest__pin {
+  flex: none;
+  margin-top: -2px;
+}
+
+.suggest__name {
+  display: block;
+  font-weight: 700;
+}
+
+.suggest__sub {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+}
