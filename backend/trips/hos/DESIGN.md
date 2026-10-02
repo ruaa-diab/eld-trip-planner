@@ -91,6 +91,11 @@ Three fixes applied vs. initial design:
 - **Fix 2 (zero-length legs):** if `leg.distance_miles == 0` or `leg.drive_hours == 0`, skip the drive segment entirely and go straight to the check order.
 - **Fix 3 (safety net):** cap at 10 000 iterations; if the check order falls through without emitting an event or advancing state, raise a clear `RuntimeError`.
 
+Amendments (found while implementing; supersede the pseudocode below where they differ):
+
+- **Zero-length legs:** a leg is zero-length when `leg_dm == 0` (drive time rounds to 0 minutes) **or** `leg.distance_miles == 0`. For such a leg, set `leg_min_rem = 0` and go straight to the check order (item 1 → pickup/dropoff). Speed is never computed for it. This replaces the `drive_hours == 0` test, which stalled on 0-mile legs with drive time > 0 and divided by zero when drive time rounded to 0 minutes.
+- **Fuel due:** check item 4 fires when `miles_since_fuel >= FUEL_MILES` **or** `h_fuel` (drive minutes left until 1,000 mi, floored) is ≤ 0. Without this, less than one minute of driving left before 1,000 mi gave `drive_for = 0` with no check firing, which stalled. The fuel stop stays at or before 1,000 mi.
+
 ```
 INIT
   clock = shift_start = start_dt
