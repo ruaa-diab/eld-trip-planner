@@ -43,6 +43,13 @@ def _fuel_minutes_left(miles_since_fuel: float, leg_dm: int, distance_miles: flo
     return int((FUEL_MILES - miles_since_fuel) * leg_dm / distance_miles)
 
 
+def _leg_minutes(leg: Leg) -> int:
+    """Drive minutes for a leg. Any leg with distance > 0 gets at least 1 minute."""
+    if leg.distance_miles == 0:
+        return 0
+    return max(1, round(leg.drive_hours * 60))
+
+
 def plan_trip(
     legs: list[Leg],
     cycle_used: float,   # hours already on 70-h cycle (0–70)
@@ -67,7 +74,7 @@ def plan_trip(
     cycle = round(cycle_used * 60)
     miles_since_fuel = 0.0
     leg_idx = 0
-    leg_dm = round(legs[0].drive_hours * 60)
+    leg_dm = _leg_minutes(legs[0])
     leg_min_rem = leg_dm
     leg_miles_done = 0.0
     iterations = 0
@@ -79,7 +86,7 @@ def plan_trip(
         state_before = (clock, leg_idx, leg_min_rem)
 
         leg = legs[leg_idx]
-        zero_leg = leg.distance_miles == 0 or leg_dm == 0
+        zero_leg = leg.distance_miles == 0
         if zero_leg:
             leg_min_rem = 0   # straight to pickup/dropoff; speed never computed
 
@@ -128,7 +135,7 @@ def plan_trip(
                 cycle += PICKUP_DUR
                 clock += timedelta(minutes=PICKUP_DUR)
                 leg_idx += 1
-                leg_dm = round(legs[leg_idx].drive_hours * 60)
+                leg_dm = _leg_minutes(legs[leg_idx])
                 leg_min_rem = leg_dm
                 leg_miles_done = 0.0
                 continue
@@ -143,7 +150,7 @@ def plan_trip(
 
             else:
                 leg_idx += 1
-                leg_dm = round(legs[leg_idx].drive_hours * 60)
+                leg_dm = _leg_minutes(legs[leg_idx])
                 leg_min_rem = leg_dm
                 leg_miles_done = 0.0
                 continue

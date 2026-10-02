@@ -93,7 +93,7 @@ Three fixes applied vs. initial design:
 
 Amendments (found while implementing; supersede the pseudocode below where they differ):
 
-- **Zero-length legs:** a leg is zero-length when `leg_dm == 0` (drive time rounds to 0 minutes) **or** `leg.distance_miles == 0`. For such a leg, set `leg_min_rem = 0` and go straight to the check order (item 1 → pickup/dropoff). Speed is never computed for it. This replaces the `drive_hours == 0` test, which stalled on 0-mile legs with drive time > 0 and divided by zero when drive time rounded to 0 minutes.
+- **Zero-length legs:** a leg is zero-length only when `leg.distance_miles == 0`. For such a leg, `leg_dm = 0`, set `leg_min_rem = 0` and go straight to the check order (item 1 → pickup/dropoff). Speed is never computed for it. Any leg with distance > 0 gets `leg_dm = max(1, round(drive_hours * 60))`, so its miles always appear in a drive event (no divide-by-zero, and driven miles always equal total leg distance). This replaces the `drive_hours == 0` test, which stalled on 0-mile legs with drive time > 0 and divided by zero when drive time rounded to 0 minutes.
 - **Fuel due:** check item 4 fires when `miles_since_fuel >= FUEL_MILES` **or** `h_fuel` (drive minutes left until 1,000 mi, floored) is ≤ 0. Without this, less than one minute of driving left before 1,000 mi gave `drive_for = 0` with no check firing, which stalled. The fuel stop stays at or before 1,000 mi.
 
 ```
@@ -337,6 +337,28 @@ Design intent: after the break, leg 1 has 120 min remaining and h\_11 = 660−54
 **Cycle after: 780 min (13 h)**
 
 Key check: dts=660 (=DRIVE\_LIMIT) and lmr=0 at the same moment after E5. Item 1 (dropoff) fires first — no rest\_10 emitted.
+
+---
+
+### Case 4c — pickup coincides with the 11 h driving limit
+
+**Inputs:** cycle 0 · Leg 0: 660 mi, 660 min (60 mph = 1 mi/min) · Leg 1: 120 mi, 120 min (60 mph)
+
+Design intent: mirror of Case 4 at the pickup. After the break, leg 0 has 180 min remaining and h\_11 = 660−480 = 180 — exact tie. After driving, dts=660 and lmr=0 simultaneously. Item 1 (pickup) fires first — on-duty work past 11 h is allowed. On the next iteration `can_drive` is False (dts=660) and lmr≠0, so item 3 fires: rest\_10 before any leg-1 driving.
+
+| # | type | status | start | end | leg | mi_s | mi_e |
+|---|---|---|---|---|---|---|---|
+| 1 | drive | driving | Day1 06:00 | Day1 14:00 | 0 | 0 | 480 |
+| 2 | break_30 | off_duty | Day1 14:00 | Day1 14:30 | 0 | 480 | 480 |
+| 3 | drive | driving | Day1 14:30 | Day1 17:30 | 0 | 480 | 660 |
+| 4 | pickup | on_duty | Day1 17:30 | Day1 18:30 | 0 | 660 | 660 |
+| 5 | rest_10 | sleeper_berth | Day1 18:30 | Day2 04:30 | 1 | 0 | 0 |
+| 6 | drive | driving | Day2 04:30 | Day2 06:30 | 1 | 0 | 120 |
+| 7 | dropoff | on_duty | Day2 06:30 | Day2 07:30 | 1 | 120 | 120 |
+
+**Cycle after: 900 min (15 h)**
+
+Key check: pickup fires at dts=660 (no rest before it); rest\_10 follows on leg 1 at mile 0. Shift elapsed at pickup end = 750 min < 840.
 
 ---
 
