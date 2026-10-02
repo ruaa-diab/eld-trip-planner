@@ -50,7 +50,10 @@ class AutocompleteTest(SimpleTestCase):
         method, url = req.call_args.args
         kwargs = req.call_args.kwargs
         self.assertEqual((method, url), ("GET", "https://api.heigit.org/pelias/v1/autocomplete"))
-        self.assertEqual(kwargs["params"], {"text": "Chic", "boundary.country": "US", "size": 5})
+        self.assertEqual(kwargs["params"], {
+            "text": "Chic", "boundary.country": "US", "size": 5,
+            "layers": "locality,county,address,street,venue",
+        })
         self.assertEqual(kwargs["headers"], {"Authorization": KEY})
         self.assertEqual(kwargs["timeout"], 5)
 

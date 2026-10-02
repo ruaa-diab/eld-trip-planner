@@ -15,6 +15,8 @@ TIMEOUT_SECONDS = 5
 MIN_CHARS = 3
 MAX_CHARS = 200
 MAX_RESULTS = 5
+# Real cities first, full addresses still work; no townships (localadmin) or neighbourhoods.
+LAYERS = "locality,county,address,street,venue"
 
 
 def suggest(text):
@@ -28,6 +30,7 @@ def suggest(text):
             "text": text,
             "boundary.country": "US",
             "size": MAX_RESULTS,
+            "layers": LAYERS,
         })
         features = data.get("features") or []
         labels = []
