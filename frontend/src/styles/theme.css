@@ -1,0 +1,259 @@
+/* Theme from the approved v3 design (design/ELD Trip Planner v3.dc.html). */
+
+:root {
+  /* Surfaces */
+  --bg: #0f1b2d;
+  --surface: #15253b;
+  --surface-raised: #1b2e48;
+  --surface-hover: #24395a;
+
+  /* Lines */
+  --border: #2a4060;
+  --border-strong: #34507a;
+  --border-subtle: #22354f;
+
+  /* Text */
+  --text: #f1f4f8;
+  --text-strong: #ffffff;
+  --text-muted: #a7b3c5;
+  --text-faint: #94a3b8;
+  --placeholder: #6f7f96;
+
+  /* Accent: highway amber */
+  --accent: #f5a524;
+  --accent-hover: #ffb83f;
+  --accent-ring: rgba(245, 165, 36, 0.25);
+  --accent-glow: rgba(245, 165, 36, 0.13);
+
+  /* Errors */
+  --danger: #e5484d;
+  --danger-text: #ff9a9d;
+  --danger-bg: rgba(229, 72, 77, 0.08);
+  --warn-text: #ff8a8d;
+
+  /* Duty status colors (log grid, legend, map) */
+  --status-off: #94a3b8;
+  --status-sleeper: #6366f1;
+  --status-driving: #f5a524;
+  --status-on: #14b8a6;
+
+  /* Fonts */
+  --font: 'Overpass', system-ui, sans-serif;
+  --font-mono: 'Overpass Mono', ui-monospace, monospace;
+
+  /* Lane line (dashed highway marking) */
+  --lane-dash: 24px;
+  --lane-gap: 20px;
+  --lane-h: repeating-linear-gradient(
+    90deg,
+    var(--accent) 0 var(--lane-dash),
+    transparent var(--lane-dash) calc(var(--lane-dash) + var(--lane-gap))
+  );
+  --lane-v: repeating-linear-gradient(180deg, var(--accent) 0 8px, transparent 8px 14px);
+
+  /* Shape */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  /* Layout */
+  --page-max: 1180px;
+  --header-max: 1280px;
+  --page-pad: 34px 32px 60px;
+  --header-pad: 0 32px;
+  --card-pad: 28px;
+
+  color-scheme: dark;
+}
+
+@media (max-width: 759px) {
+  :root {
+    --page-pad: 22px 16px 44px;
+    --header-pad: 0 16px;
+    --card-pad: 18px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 520px at 50% -260px, var(--accent-glow), transparent 70%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+input,
+button,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input::placeholder {
+  color: var(--placeholder);
+}
+
+/* ── Shared building blocks ── */
+
+.page {
+  padding: var(--page-pad);
+}
+
+.page__inner {
+  max-width: var(--page-max);
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--card-pad);
+}
+
+/* Section badge: "01 ROUTE" */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px 4px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-strong);
+}
+
+.badge--numbered {
+  padding-left: 6px;
+}
+
+.badge__num {
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 3px;
+  padding: 2px 6px 0;
+  font-size: 12px;
+  letter-spacing: normal;
+}
+
+/* Dashed lane line divider */
+.lane-line {
+  height: 3px;
+  background-image: var(--lane-h);
+  opacity: 0.85;
+}
+
+/* Form controls */
+.label {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.hint {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.input {
+  width: 100%;
+  height: 48px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 2px 14px 0;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--bg);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--bg));
+}
+
+.field-error {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--danger-text);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@keyframes eldlane {
+  to {
+    background-position: -44px 0; /* one dash + gap */
+  }
+}
+
+@keyframes eldbob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

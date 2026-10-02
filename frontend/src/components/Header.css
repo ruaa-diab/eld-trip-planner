@@ -1,0 +1,83 @@
+.header {
+  background: var(--bg);
+}
+
+.header__bar {
+  max-width: var(--header-max);
+  margin: 0 auto;
+  height: 64px;
+  padding: var(--header-pad);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+
+.header__brand:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* The design draws a 1.5px frame around the logo; logo.svg has none. */
+.header__logo {
+  display: block;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+}
+
+.header__title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header__pill {
+  font-size: 13px;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px 3px;
+  white-space: nowrap;
+}
+
+.header__new {
+  height: 38px;
+  padding: 2px 16px 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.header__new:hover {
+  background: rgba(245, 165, 36, 0.12);
+}
+
+.header__lane {
+  height: 2px;
+  background-image: var(--lane-h);
+  opacity: 0.55;
+}
+
+@media (max-width: 759px) {
+  .header__pill {
+    display: none;
+  }
+}

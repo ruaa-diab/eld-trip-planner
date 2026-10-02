@@ -1,0 +1,383 @@
+/* ── Page intro ── */
+
+.form__intro {
+  margin-bottom: 26px;
+  max-width: 720px;
+}
+
+.form__title {
+  margin: 0 0 6px;
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.form__lead {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 16px;
+  text-wrap: pretty;
+}
+
+/* ── Layout: form card + rules panel ── */
+
+.form__layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.form__card {
+  flex: 1 1 560px;
+  min-width: 0;
+}
+
+.form__badge {
+  margin: 0 0 18px;
+}
+
+.form__divider {
+  margin: 30px 0 24px;
+}
+
+.form__divider--details {
+  margin: 28px 0 0;
+}
+
+/* ── General error ── */
+
+.form__alert {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 22px;
+  padding: 14px 16px 12px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-size: 14px;
+}
+
+.form__alert svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--danger);
+}
+
+.form__alert strong {
+  display: block;
+  color: var(--text);
+  font-size: 15px;
+}
+
+/* ── Route ── */
+
+.route {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.route__rail {
+  position: absolute;
+  left: 12px;
+  top: 48px;
+  bottom: 32px;
+  width: 2px;
+  background-image: var(--lane-v);
+  opacity: 0.7;
+}
+
+.route__row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  column-gap: 14px;
+}
+
+.route__marker {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 34px;
+}
+
+.route__marker--current {
+  padding-top: 36px;
+}
+
+/* ── Cycle ── */
+
+.cycle__label {
+  margin-bottom: 2px;
+}
+
+.cycle__help {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.cycle__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.cycle__number {
+  position: relative;
+  width: 132px;
+  flex: none;
+}
+
+.cycle__number .input {
+  padding-right: 44px;
+  font-size: 17px;
+}
+
+/* Hide number spinners; the slider is the stepper. */
+.cycle__number .input::-webkit-outer-spin-button,
+.cycle__number .input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.cycle__number .input {
+  -moz-appearance: textfield;
+}
+
+.cycle__unit {
+  position: absolute;
+  right: 12px;
+  top: 14px;
+  color: var(--text-muted);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.cycle__slider {
+  flex: 1 1 200px;
+  height: 24px;
+  accent-color: var(--accent);
+}
+
+.cycle__bar {
+  margin-top: 14px;
+  height: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.cycle__fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.15s;
+}
+
+.cycle__legend {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.cycle__legend strong {
+  color: var(--text);
+}
+
+.cycle__left--low,
+.cycle__left--low strong {
+  color: var(--warn-text);
+}
+
+/* ── Start date/time ── */
+
+.start {
+  margin-top: 22px;
+}
+
+.start__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+
+.start .input {
+  padding: 2px 12px 0;
+}
+
+/* ── Driver & carrier details ── */
+
+.details__toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: 0;
+  padding: 18px 0;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text);
+}
+
+.details__title {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.details__optional {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.details__sub {
+  display: block;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.details__chevron {
+  flex: none;
+  color: var(--accent);
+  transition: transform 0.15s;
+}
+
+.details__chevron--open {
+  transform: rotate(180deg);
+}
+
+.details__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  padding-bottom: 20px;
+}
+
+.input--compact {
+  height: 46px;
+  padding: 2px 12px 0;
+  font-size: 15px;
+}
+
+/* ── Submit ── */
+
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.form__submit {
+  height: 52px;
+  padding: 3px 30px 0;
+  border-radius: var(--radius);
+  border: 0;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 0 24px var(--accent-ring);
+}
+
+.form__submit:hover {
+  background: var(--accent-hover);
+}
+
+.form__submit svg {
+  margin-top: -3px;
+}
+
+/* ── Planning rules ── */
+
+.rules {
+  flex: 1 1 300px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 22px 22px 18px;
+}
+
+.rules__badge {
+  margin: 0 0 10px;
+}
+
+.rules__list {
+  margin: 0;
+}
+
+.rules__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 14px;
+}
+
+.rules__row dt {
+  color: var(--text-muted);
+}
+
+.rules__row dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.rules__legend-title {
+  margin: 16px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rules__legend {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  font-size: 14px;
+}
+
+.rules__legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rules__swatch {
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.rules__swatch--off { background: var(--status-off); }
+.rules__swatch--sleeper { background: var(--status-sleeper); }
+.rules__swatch--driving { background: var(--status-driving); }
+.rules__swatch--on { background: var(--status-on); }
+
+@media (max-width: 759px) {
+  .form__submit {
+    width: 100%;
+  }
+}
