@@ -28,7 +28,7 @@ function SectionBadge({ num, children }) {
  * values: { current_location, pickup_location, dropoff_location, cycle, date, time, details: {...} }
  * errors: { [field]: message, details: { [key]: message } }
  */
-export default function TripForm({ values, errors, generalError, onChange, onSubmit }) {
+export default function TripForm({ values, errors, generalError, focusRequest, onChange, onSubmit }) {
   const formRef = useRef(null)
   const detailErrors = errors.details || {}
   const hasDetailErrors = Object.keys(detailErrors).length > 0
@@ -37,7 +37,8 @@ export default function TripForm({ values, errors, generalError, onChange, onSub
     const first = FOCUS_ORDER.find(([field]) => errors[field])
     const id = first ? first[1] : hasDetailErrors ? `details-${Object.keys(detailErrors)[0]}` : null
     if (id) formRef.current?.querySelector(`#${id}`)?.focus()
-  }, [errors]) // eslint-disable-line react-hooks/exhaustive-deps
+    // Only after a submit (focusRequest changes), never while the user edits and errors clear.
+  }, [focusRequest]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (name, value) => onChange({ ...values, [name]: value })
   const setDetail = (key, value) => onChange({ ...values, details: { ...values.details, [key]: value } })

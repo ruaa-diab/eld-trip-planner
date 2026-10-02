@@ -77,7 +77,7 @@ class FakeORS:
                 return ok({"features": []})
             lat, lon = PLACES[text]
             return ok({"features": [{"geometry": {"coordinates": [lon, lat]},
-                                     "properties": {"label": f"{text}, USA"}}]})
+                                     "properties": {"label": f"{text}, USA", "layer": "locality", "confidence": 1}}]})
         if url.endswith("/pelias/v1/reverse"):
             return ok({"features": [{"properties": {"county": "Test County", "region_a": "IA"}}]})
         if "/directions/" in url:
@@ -218,6 +218,52 @@ class PlanTripApiTest(SimpleTestCase):
     def test_several_addresses_not_found_are_all_listed(self):
         resp = self.post(payload(current_location="Xxx", dropoff_location="Yyy"))
         self.assertEqual(resp.json()["error"]["fields"], ["current_location", "dropoff_location"])
+        self.assertEqual(resp.json()["error"]["reasons"],
+                         {"current_location": "not_found", "dropoff_location": "not_found"})
+
+    def test_too_short_or_letterless_locations_rejected_without_geocoding(self):
+        for value in ("C", "  Ab ", "123", "12-34", "", "   "):
+            with self.subTest(value=value):
+                resp = self.post(payload(pickup_location=value))
+                self.assertEqual(resp.status_code, 400)
+                error = resp.json()["error"]
+                self.assertEqual(error["code"], "invalid_input")
+                self.assertEqual(error["fields"]["pickup_location"], ["Enter a city or address"])
+        resp = self.post({k: v for k, v in payload().items() if k != "current_location"})
+        self.assertEqual(resp.json()["error"]["fields"]["current_location"], ["Enter a city or address"])
+        self.request_mock.assert_not_called()
+
+    def test_three_letters_is_enough(self):
+        self.fake.search["Ccc"] = ok({"features": [{
+            "geometry": {"coordinates": [-85.5, 33.6]},
+            "properties": {"label": "CCC, Cleburne County, AL, USA", "layer": "venue", "confidence": 1},
+        }]})
+        resp = self.post(payload(current_location="Ccc"))
+        self.assertEqual(resp.status_code, 200, resp.content)
+
+    def test_state_or_country_match_is_not_a_proper_place(self):
+        for text, layer in (("Illinois", "region"), ("USA", "country"), ("Chicago 60632", "postalcode")):
+            with self.subTest(layer=layer):
+                self.fake.search[text] = ok({"features": [{
+                    "geometry": {"coordinates": [-89.2, 40.0]},
+                    "properties": {"label": f"{text}, USA", "layer": layer, "confidence": 1},
+                }]})
+                resp = self.post(payload(dropoff_location=text))
+                self.assertEqual(resp.status_code, 400)
+                error = resp.json()["error"]
+                self.assertEqual(error["code"], "address_not_found")
+                self.assertEqual(error["reasons"], {"dropoff_location": "invalid_place"})
+                self.assertIn("Enter a proper city or address", error["message"])
+
+    def test_weak_match_is_not_found(self):
+        # A typo that Pelias falls back to the whole state with low confidence.
+        self.fake.search["Chicgo, IL"] = ok({"features": [{
+            "geometry": {"coordinates": [-89.2, 40.0]},
+            "properties": {"label": "Illinois, USA", "layer": "region", "confidence": 0.3, "match_type": "fallback"},
+        }]})
+        resp = self.post(payload(current_location="Chicgo, IL"))
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.json()["error"]["reasons"], {"current_location": "not_found"})
 
     def test_no_route_returns_422(self):
         for code in (2009, 2010):

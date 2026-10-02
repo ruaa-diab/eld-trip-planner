@@ -10,11 +10,10 @@ import ResultsPage from './components/results/ResultsPage.jsx'
 import LogViewer, { PrintLogs } from './components/logs/LogViewer.jsx'
 import { parseLocal } from './format.js'
 
-const LOCATION_LABELS = {
-  current_location: 'current location',
-  pickup_location: 'pickup location',
-  dropoff_location: 'dropoff location',
-}
+const LOCATION_FIELDS = ['current_location', 'pickup_location', 'dropoff_location']
+
+/** Same rule as the API: at least 3 characters and at least one letter (never geocode "C" or "123"). */
+export const isUsableLocation = (text) => text.trim().length >= 3 && /\p{L}/u.test(text)
 
 function initialValues() {
   const { date, time } = nowLocal()
@@ -32,8 +31,8 @@ function initialValues() {
 /** Client-side checks mirroring the API, so obvious mistakes don't need a round trip. */
 function validate(values) {
   const errors = {}
-  for (const [field, label] of Object.entries(LOCATION_LABELS)) {
-    if (!values[field].trim()) errors[field] = `Enter the ${label}.`
+  for (const field of LOCATION_FIELDS) {
+    if (!isUsableLocation(values[field])) errors[field] = 'Enter a city or address'
   }
   const cycle = Number(values.cycle)
   if (values.cycle.trim() === '') {
@@ -63,7 +62,10 @@ function errorsFromApi(err, values) {
   if (err.code === 'address_not_found' && Array.isArray(err.fields)) {
     const fieldErrors = {}
     for (const field of err.fields) {
-      fieldErrors[field] = `Couldn't find '${values[field].trim()}'. Check the spelling.`
+      fieldErrors[field] =
+        err.reasons?.[field] === 'invalid_place'
+          ? 'Enter a proper city or address'
+          : `Couldn't find '${values[field].trim()}'. Check the spelling.`
     }
     return { fieldErrors, generalError: null }
   }
@@ -87,6 +89,7 @@ export default function App() {
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState({})
   const [generalError, setGeneralError] = useState(null)
+  const [focusRequest, setFocusRequest] = useState(0) // bumped when a submit fails, to focus the first error
   const [result, setResult] = useState(null) // { plan, departure }
   const controllerRef = useRef(null)
 
@@ -94,7 +97,7 @@ export default function App() {
   const change = (next) => {
     setErrors((prev) => {
       const out = { ...prev }
-      for (const field of Object.keys(LOCATION_LABELS)) if (next[field] !== values[field]) delete out[field]
+      for (const field of LOCATION_FIELDS) if (next[field] !== values[field]) delete out[field]
       if (next.cycle !== values.cycle) delete out.current_cycle_used
       if (next.date !== values.date || next.time !== values.time) delete out.start_time
       if (out.details) {
@@ -128,6 +131,7 @@ export default function App() {
     const clientErrors = validate(values)
     setGeneralError(null)
     setErrors(clientErrors)
+    setFocusRequest((n) => n + 1)
     if (Object.keys(clientErrors).length) return
 
     const controller = new AbortController()
@@ -143,6 +147,7 @@ export default function App() {
       const { fieldErrors, generalError: message } =
         err instanceof ApiError ? errorsFromApi(err, values) : { fieldErrors: {}, generalError: err.message }
       setErrors(fieldErrors)
+      setFocusRequest((n) => n + 1)
       setGeneralError(message)
       setScreen('form')
     } finally {
@@ -157,6 +162,7 @@ export default function App() {
         <TripForm
           values={values}
           errors={errors}
+          focusRequest={focusRequest}
           generalError={generalError}
           onChange={change}
           onSubmit={submit}

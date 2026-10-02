@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from trips.hos.engine import plan_trip
 from trips.hos.validator import validate_trip
 from trips.services.logs import CYCLE_LIMIT_MIN, build_logs
-from trips.services.routing import AddressNotFound, geocode, get_route
+from trips.services.routing import AddressNotFound, InvalidPlace, geocode, get_route
 from trips.services.stops import locate, name_stops
 
 logger = logging.getLogger(__name__)
@@ -21,11 +21,20 @@ MAX_GEOMETRY_POINTS = 1500
 
 
 class AddressesNotFound(Exception):
-    """One or more locations could not be geocoded; .fields lists them in form order."""
+    """One or more locations could not be used.
 
-    def __init__(self, fields, texts):
-        self.fields = fields
-        super().__init__("; ".join(f"{FIELD_LABELS[f]} not found: {texts[f]}" for f in fields))
+    .fields lists them in form order; .reasons maps each to "not_found" (no confident match)
+    or "invalid_place" (the match is a state, country, ZIP area, ...).
+    """
+
+    def __init__(self, reasons, texts):
+        self.fields = list(reasons)
+        self.reasons = reasons
+        super().__init__("; ".join(
+            f"{FIELD_LABELS[f]}: Enter a proper city or address" if r == "invalid_place"
+            else f"{FIELD_LABELS[f]} not found: {texts[f]}"
+            for f, r in reasons.items()
+        ))
 
 
 class IllegalPlan(Exception):
@@ -36,15 +45,17 @@ def _geocode_all(data):
     def lookup(field):
         try:
             return geocode(data[field])
+        except InvalidPlace:
+            return "invalid_place"
         except AddressNotFound:
-            return None
+            return "not_found"
 
     with ThreadPoolExecutor(max_workers=len(LOCATION_FIELDS)) as pool:
-        points = list(pool.map(lookup, LOCATION_FIELDS))
-    missing = [f for f, p in zip(LOCATION_FIELDS, points) if p is None]
-    if missing:
-        raise AddressesNotFound(missing, data)
-    return points
+        results = list(pool.map(lookup, LOCATION_FIELDS))
+    reasons = {f: r for f, r in zip(LOCATION_FIELDS, results) if isinstance(r, str)}
+    if reasons:
+        raise AddressesNotFound(reasons, data)
+    return results
 
 
 def simplify(geometry, keep, max_points=MAX_GEOMETRY_POINTS):

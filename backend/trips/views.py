@@ -13,10 +13,11 @@ from trips.services.routing import (
 logger = logging.getLogger(__name__)
 
 
-def error_response(status, code, message, fields=None):
+def error_response(status, code, message, fields=None, **extra):
     body = {"code": code, "message": message}
     if fields is not None:
         body["fields"] = fields
+    body.update(extra)
     return Response({"error": body}, status=status)
 
 
@@ -41,7 +42,7 @@ def plan_trip(request):
     try:
         return Response(planner.plan(serializer.validated_data))
     except planner.AddressesNotFound as e:
-        return error_response(400, "address_not_found", str(e), fields=e.fields)
+        return error_response(400, "address_not_found", str(e), fields=e.fields, reasons=e.reasons)
     except NoRouteFound as e:
         return error_response(422, "no_route", str(e))
     except ApiKeyError as e:

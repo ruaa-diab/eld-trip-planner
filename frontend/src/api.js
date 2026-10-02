@@ -6,12 +6,14 @@ export class ApiError extends Error {
    * @param {string} code    API error code, e.g. "address_not_found"
    * @param {string} message Readable message
    * @param {object|array|undefined} fields  Field names (address_not_found) or per-field messages (invalid_input)
+   * @param {object|undefined} reasons  address_not_found only: field → "not_found" | "invalid_place"
    */
-  constructor(status, code, message, fields) {
+  constructor(status, code, message, fields, reasons) {
     super(message)
     this.status = status
     this.code = code
     this.fields = fields
+    this.reasons = reasons
   }
 }
 
@@ -56,6 +58,6 @@ export async function planTrip(payload, signal) {
   if (resp.ok && body) return body
 
   const error = body?.error
-  if (error) throw new ApiError(resp.status, error.code, error.message, error.fields)
+  if (error) throw new ApiError(resp.status, error.code, error.message, error.fields, error.reasons)
   throw new ApiError(resp.status, 'unknown_error', `Something went wrong (HTTP ${resp.status}). Try again.`)
 }

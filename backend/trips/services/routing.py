@@ -18,6 +18,12 @@ GEOCODE_PATH = "/pelias/v1/search"
 DIRECTIONS_PATH = "/openrouteservice/v2/directions/driving-hgv/geojson"
 TIMEOUT_SECONDS = 15
 
+# Geocoding acceptance. Pelias confidence is 0–1 with no documented threshold; correct
+# city matches can be "fallback" at 0.6 (e.g. "Denver, CO"), while a typo that falls back
+# to a whole state scores 0.3, so 0.5 separates them.
+MIN_CONFIDENCE = 0.5
+ACCEPTED_LAYERS = {"locality", "county", "address", "street", "venue"}
+
 # ORS routing error codes that mean "these places can't be routed".
 NO_ROUTE_MESSAGES = {
     2004: "The route exceeds the routing service's limits (too long).",
@@ -32,6 +38,10 @@ class RoutingError(Exception):
 
 class AddressNotFound(RoutingError):
     pass
+
+
+class InvalidPlace(AddressNotFound):
+    """The best match is not a usable place type (e.g. a state, a country or a ZIP area)."""
 
 
 class NoRouteFound(RoutingError):
@@ -137,8 +147,16 @@ def geocode(text):
         raise AddressNotFound(f"Address not found: {text}")
 
     feature = features[0]
+    props = feature.get("properties") or {}
+    # Never guess: a weak match (e.g. a typo that falls back to the whole state) is "not found".
+    confidence = props.get("confidence")
+    if confidence is not None and confidence < MIN_CONFIDENCE:
+        raise AddressNotFound(f"Address not found: {text}")
+    if props.get("layer") not in ACCEPTED_LAYERS:
+        raise InvalidPlace("Enter a proper city or address")
+
     lon, lat = feature["geometry"]["coordinates"][:2]
-    label = short_label(feature.get("properties", {}).get("label") or text)
+    label = short_label(props.get("label") or text)
     return lat, lon, label
 
 

@@ -43,10 +43,30 @@ class DetailsSerializer(serializers.Serializer):
                 required=False, allow_blank=True, max_length=200, default="")
 
 
+LOCATION_MESSAGE = "Enter a city or address"
+LOCATION_MIN_CHARS = 3
+
+
+def validate_location_text(value):
+    """At least 3 characters and at least one letter, so a stray "C" or "123" is never geocoded."""
+    if len(value) < LOCATION_MIN_CHARS or not any(ch.isalpha() for ch in value):
+        raise serializers.ValidationError(LOCATION_MESSAGE)
+
+
+class LocationField(serializers.CharField):
+    def __init__(self, **kwargs):
+        super().__init__(
+            max_length=200,
+            validators=[validate_location_text],
+            error_messages={"required": LOCATION_MESSAGE, "blank": LOCATION_MESSAGE, "null": LOCATION_MESSAGE},
+            **kwargs,
+        )
+
+
 class PlanTripSerializer(serializers.Serializer):
-    current_location = serializers.CharField(max_length=200)
-    pickup_location = serializers.CharField(max_length=200)
-    dropoff_location = serializers.CharField(max_length=200)
+    current_location = LocationField()
+    pickup_location = LocationField()
+    dropoff_location = LocationField()
     current_cycle_used = serializers.FloatField(min_value=0, max_value=70)
     start_time = LocalDateTimeField()
     details = DetailsSerializer(required=False)

@@ -7,7 +7,7 @@ from django.test import SimpleTestCase, override_settings
 
 from trips.services import routing
 from trips.services.routing import (
-    AddressNotFound, ApiKeyError, NoRouteFound, QuotaExceeded, RoutingError,
+    AddressNotFound, ApiKeyError, InvalidPlace, NoRouteFound, QuotaExceeded, RoutingError,
     ServiceUnavailable, geocode, get_route,
 )
 
@@ -28,7 +28,7 @@ def response(status=200, body=None, text=""):
 def geocode_body(*features):
     return {"type": "FeatureCollection", "features": [
         {"geometry": {"type": "Point", "coordinates": [lon, lat]},
-         "properties": {"label": label}}
+         "properties": {"label": label, "layer": "locality", "confidence": 1}}
         for lat, lon, label in features
     ]}
 
@@ -97,6 +97,50 @@ class GeocodeTest(SimpleTestCase):
         req.return_value = response(429, {"error": "Rate limit exceeded"})
         with self.assertRaises(QuotaExceeded):
             geocode("Chicago, IL")
+
+
+def pelias(layer, confidence=1, label="Somewhere, IL, USA"):
+    return response(body={"features": [{
+        "geometry": {"type": "Point", "coordinates": [-89.0, 42.0]},
+        "properties": {"label": label, "layer": layer, "confidence": confidence},
+    }]})
+
+
+@override_settings(ORS_API_KEY="test-key")
+@mock.patch.object(routing.requests, "request")
+class GeocodeQualityTest(SimpleTestCase):
+    """Never guess: weak matches and non-place types are rejected."""
+
+    def test_accepts_cities_counties_addresses_streets_and_venues(self, req):
+        for layer in ("locality", "county", "address", "street", "venue"):
+            with self.subTest(layer=layer):
+                req.return_value = pelias(layer)
+                self.assertEqual(geocode("Somewhere")[2], "Somewhere, IL")
+
+    def test_rejects_other_place_types(self, req):
+        for layer in ("region", "macroregion", "country", "postalcode", "localadmin", "neighbourhood", None):
+            with self.subTest(layer=layer):
+                req.return_value = pelias(layer)
+                with self.assertRaisesRegex(InvalidPlace, "Enter a proper city or address"):
+                    geocode("Somewhere")
+
+    def test_low_confidence_is_not_found(self, req):
+        req.return_value = pelias("region", confidence=0.3, label="Illinois, USA")
+        with self.assertRaises(AddressNotFound) as ctx:
+            geocode("Chicgo, IL")
+        self.assertNotIsInstance(ctx.exception, InvalidPlace)
+
+    def test_fallback_city_at_0_6_is_accepted(self, req):
+        # Live Pelias returns "Denver, CO" as a fallback locality with confidence 0.6.
+        req.return_value = pelias("locality", confidence=0.6, label="Denver, CO, USA")
+        self.assertEqual(geocode("Denver, CO")[2], "Denver, CO")
+
+    def test_threshold_boundary(self, req):
+        req.return_value = pelias("locality", confidence=0.5)
+        geocode("Somewhere")                                   # 0.5 is accepted
+        req.return_value = pelias("locality", confidence=0.49)
+        with self.assertRaises(AddressNotFound):
+            geocode("Somewhere")
 
 
 @override_settings(ORS_API_KEY="test-key")
