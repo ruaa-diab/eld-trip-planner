@@ -94,7 +94,8 @@ Decisions made where the assessment is silent:
 - **Status choices:** 30-minute breaks are logged off duty, 10-hour rests in the sleeper berth, 34-hour restarts off duty, and pickup, dropoff and fueling on duty.
 - **No sleeper berth split (7/3 or 8/2).** Every rest is one 10-hour block.
 - **No pre-trip or post-trip inspection time**, since the assessment's assumptions do not include it.
-- **One time zone for the whole trip.** FMCSA requires logs in home terminal time even across zones; the current location's time zone is used as home terminal time and shown on every sheet.
+- **One time zone for the whole trip.** FMCSA requires logs in home terminal time even across zones. The form asks for the start time in home terminal time and it is used exactly as entered, with no time zone conversion.
+- **No daylight-saving adjustment.** Every log day is 24 hours. A trip that crosses a daylight-saving change is off by one hour from that point on.
 - **Trip is current → pickup → dropoff.** Extra stops are planned as a new trip.
 - **Truck routing.** Drive times come from OpenRouteService's heavy goods vehicle profile.
 
