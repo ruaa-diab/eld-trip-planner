@@ -6,6 +6,8 @@ import Header from './components/Header.jsx'
 import LoadingScreen from './components/LoadingScreen.jsx'
 import { nowLocal } from './components/StartFields.jsx'
 import TripForm from './components/TripForm.jsx'
+import ResultsPage from './components/results/ResultsPage.jsx'
+import { parseLocal } from './format.js'
 
 const LOCATION_LABELS = {
   current_location: 'current location',
@@ -33,7 +35,9 @@ function validate(values) {
     if (!values[field].trim()) errors[field] = `Enter the ${label}.`
   }
   const cycle = Number(values.cycle)
-  if (values.cycle === '' || !Number.isFinite(cycle) || cycle < 0 || cycle > CYCLE_MAX) {
+  if (values.cycle.trim() === '') {
+    errors.current_cycle_used = 'Enter the hours already used (0 to 70)'
+  } else if (!Number.isFinite(cycle) || cycle < 0 || cycle > CYCLE_MAX) {
     errors.current_cycle_used = 'Enter a number of hours from 0 to 70.'
   }
   if (!values.date || !values.time) errors.start_time = 'Enter the start date and time.'
@@ -76,36 +80,12 @@ function errorsFromApi(err, values) {
   return { fieldErrors: {}, generalError: err.message }
 }
 
-/** 1593 → "26 h 33 min", 1800 → "30 h". */
-export function formatMinutes(min) {
-  const h = Math.floor(min / 60)
-  const m = min % 60
-  return m ? `${h} h ${m} min` : `${h} h`
-}
-
-function SummaryText({ summary }) {
-  return (
-    <main className="page">
-      <div className="page__inner">
-        <h1>Trip planned</h1>
-        <ul>
-          <li>Total miles: {summary.total_miles.toLocaleString()} mi</li>
-          <li>Days: {summary.days}</li>
-          <li>Cycle used after this trip: {formatMinutes(summary.cycle_after_min)} / 70 h</li>
-          <li>Hours available tomorrow: {formatMinutes(summary.available_tomorrow_min)}</li>
-          {summary.restart_needed && <li>34-hour restart needed before the next trip</li>}
-        </ul>
-      </div>
-    </main>
-  )
-}
-
 export default function App() {
   const [screen, setScreen] = useState('form') // form | loading | result
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState({})
   const [generalError, setGeneralError] = useState(null)
-  const [result, setResult] = useState(null)
+  const [result, setResult] = useState(null) // { plan, departure }
   const controllerRef = useRef(null)
 
   // Editing a field clears its error.
@@ -134,6 +114,14 @@ export default function App() {
     window.scrollTo(0, 0)
   }
 
+  // New trip: a fresh form with the current time. (Edit trip keeps the values.)
+  const newTrip = () => {
+    backToForm()
+    setValues(initialValues())
+    setErrors({})
+    setGeneralError(null)
+  }
+
   const submit = async () => {
     const clientErrors = validate(values)
     setGeneralError(null)
@@ -146,7 +134,7 @@ export default function App() {
     window.scrollTo(0, 0)
     try {
       const data = await planTrip(toPayload(values), controller.signal)
-      setResult(data)
+      setResult({ plan: data, departure: parseLocal(`${values.date}T${values.time}`) })
       setScreen('result')
     } catch (err) {
       if (err.name === 'AbortError') return
@@ -162,7 +150,7 @@ export default function App() {
 
   return (
     <>
-      <Header onNewTrip={screen === 'form' ? null : backToForm} />
+      <Header onNewTrip={screen === 'form' ? null : newTrip} />
       {screen === 'form' && (
         <TripForm
           values={values}
@@ -181,7 +169,9 @@ export default function App() {
           onCancel={backToForm}
         />
       )}
-      {screen === 'result' && result && <SummaryText summary={result.summary} />}
+      {screen === 'result' && result && (
+        <ResultsPage plan={result.plan} departure={result.departure} onEdit={backToForm} />
+      )}
     </>
   )
 }

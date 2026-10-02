@@ -17,7 +17,22 @@ export const DETAIL_FIELDS = [
 
 export const emptyDetails = () => Object.fromEntries(DETAIL_FIELDS.map(([k]) => [k, '']))
 
-export default function DriverDetails({ values, errors, onChange, forceOpen }) {
+// Example values from the design; co-driver stays blank ("None").
+export const SAMPLE_DETAILS = {
+  driver_name: 'Marcus Delgado',
+  driver_number: 'D4471-2209',
+  co_driver_name: '',
+  carrier_name: 'Prairie Line Freight LLC',
+  main_office_address: '2150 W Fulton St, Chicago, IL 60612',
+  home_terminal_address: '4400 S Pulaski Rd, Chicago, IL 60632',
+  truck_number: '2417',
+  trailer_number: '53-0918',
+  shipping_document: 'BOL 7781-2290-RF',
+  shipper: 'Midwest Paper Co.',
+  commodity: 'Paper rolls, 38,400 lb',
+}
+
+export default function DriverDetails({ values, errors, onChange, onFillSample, forceOpen }) {
   const [open, setOpen] = useState(false)
   const isOpen = open || forceOpen
 
@@ -52,6 +67,16 @@ export default function DriverDetails({ values, errors, onChange, forceOpen }) {
             strokeLinejoin="round"
           />
         </svg>
+      </button>
+      <button
+        type="button"
+        className="details__sample"
+        onClick={() => {
+          onFillSample()
+          setOpen(true)
+        }}
+      >
+        Use sample details
       </button>
       {isOpen && (
         <div className="details__grid" id="details-fields">

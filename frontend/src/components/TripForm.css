@@ -247,6 +247,23 @@
   color: var(--text-muted);
 }
 
+.details__sample {
+  display: block;
+  margin: -10px 0 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.details__sample:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
 .details__chevron {
   flex: none;
   color: var(--accent);

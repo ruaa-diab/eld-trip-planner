@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import CycleField from './CycleField.jsx'
-import DriverDetails from './DriverDetails.jsx'
+import DriverDetails, { SAMPLE_DETAILS } from './DriverDetails.jsx'
 import PlanningRules from './PlanningRules.jsx'
 import RouteFields from './RouteFields.jsx'
 import StartFields from './StartFields.jsx'
@@ -91,6 +91,7 @@ export default function TripForm({ values, errors, generalError, onChange, onSub
               values={values.details}
               errors={detailErrors}
               onChange={setDetail}
+              onFillSample={() => onChange({ ...values, details: { ...SAMPLE_DETAILS } })}
               forceOpen={hasDetailErrors}
             />
 
