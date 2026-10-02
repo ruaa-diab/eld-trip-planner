@@ -167,15 +167,16 @@ class IsZipTest(SimpleTestCase):
 class GeocodeZipTest(SimpleTestCase):
 
     def test_zip_with_city_is_labelled_with_city(self, req):
+        # No brackets in the label; the UI adds "(ZIP area)".
         req.return_value = postal("60632")
-        self.assertEqual(geocode("60632"), (41.81, -87.72, "60632 (Chicago, IL)"))
+        self.assertEqual(geocode("60632"), (41.81, -87.72, "60632, Chicago, IL"))
         self.assertEqual(req.call_args.kwargs["params"], {
             "text": "60632", "size": 1, "boundary.country": "US", "layers": "postalcode",
         })
 
     def test_zip_plus_4_looks_up_the_5_digit_zip(self, req):
         req.return_value = postal("60632")
-        self.assertEqual(geocode("60632-1234")[2], "60632-1234 (Chicago, IL)")
+        self.assertEqual(geocode("60632-1234")[2], "60632-1234, Chicago, IL")
         self.assertEqual(req.call_args.kwargs["params"]["text"], "60632")
 
     def test_zip_without_city_is_labelled_zip(self, req):

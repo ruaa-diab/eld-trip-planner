@@ -243,7 +243,7 @@ class PlanTripApiTest(SimpleTestCase):
                 }]})
                 resp = self.post(payload(current_location=text))
                 self.assertEqual(resp.status_code, 200, resp.content)
-                self.assertEqual(resp.json()["waypoints"][0]["label"], f"{text} (Chicago, IL)")
+                self.assertEqual(resp.json()["waypoints"][0]["label"], f"{text}, Chicago, IL")
 
     def test_other_all_digit_input_is_rejected(self):
         for text in ("1234", "123456", "60632-12", "606321234", "60632 1234"):

@@ -192,7 +192,10 @@ def geocode_place(text):
 
 
 def _geocode_zip(text):
-    """US ZIP (or ZIP+4) → (lat, lon, "60632 (Chicago, IL)" or "ZIP 82190")."""
+    """US ZIP (or ZIP+4) → (lat, lon, "60632, Chicago, IL" or "ZIP 82190").
+
+    No brackets: the UI adds "(ZIP area)" after ZIP-level locations.
+    """
     zip5 = ZIP_RE.match(text).group(1)
     data = request_json("GET", GEOCODE_PATH, params={
         "text": zip5,
@@ -211,7 +214,7 @@ def _geocode_zip(text):
 
     lon, lat = features[0]["geometry"]["coordinates"][:2]
     city, state = props.get("locality"), props.get("region_a")
-    label = f"{text} ({city}, {state})" if city and state else f"ZIP {text}"
+    label = f"{text}, {city}, {state}" if city and state else f"ZIP {text}"
     return lat, lon, label, "zip"
 
 
