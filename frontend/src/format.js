@@ -44,3 +44,7 @@ export const isBlank = (v) => v == null || String(v).trim() === ''
 
 /** Optional log-sheet fields: show a muted "—" when empty, never a blank line or an invented value. */
 export const orDash = (v) => (isBlank(v) ? '—' : String(v).trim())
+
+/** Note after a location name when it was matched as an area, not an exact point. */
+export const precisionNote = (precision) =>
+  ({ city: '(city center)', county: '(county center)', zip: '(ZIP area)' })[precision] || ''

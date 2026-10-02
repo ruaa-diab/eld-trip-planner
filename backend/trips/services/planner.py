@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from trips.hos.engine import plan_trip
 from trips.hos.validator import validate_trip
 from trips.services.logs import CYCLE_LIMIT_MIN, build_logs
-from trips.services.routing import AddressNotFound, InvalidPlace, geocode, get_route
+from trips.services.routing import AddressNotFound, InvalidPlace, geocode_place, get_route
 from trips.services.stops import locate, name_stops
 
 logger = logging.getLogger(__name__)
@@ -42,9 +42,18 @@ class IllegalPlan(Exception):
 
 
 def _geocode_all(data):
+    """(lat, lon, label, precision) for current, pickup, dropoff.
+
+    With current_coords (from "Use my current location") the current location is not
+    geocoded: those exact coordinates are used, labelled with the current_location text.
+    """
+    coords = data.get("current_coords")
+
     def lookup(field):
+        if field == "current_location" and coords:
+            return coords["lat"], coords["lon"], data[field], "exact"
         try:
-            return geocode(data[field])
+            return geocode_place(data[field])
         except InvalidPlace:
             return "invalid_place"
         except AddressNotFound:
@@ -79,7 +88,8 @@ def _round1(x):
 
 def plan(data):
     """Plan a trip from validated request data. Returns the response body as a dict."""
-    points = _geocode_all(data)
+    places = _geocode_all(data)
+    points = [p[:3] for p in places]
     route = get_route(*points)
     cycle_used = data["current_cycle_used"]
     start = data["start_time"]
@@ -122,8 +132,8 @@ def plan(data):
             "restart_needed": log.cycle_after_min >= CYCLE_LIMIT_MIN,
         },
         "waypoints": [
-            {"role": role, "label": label, "lat": lat, "lon": lon}
-            for role, (lat, lon, label) in zip(("current", "pickup", "dropoff"), points)
+            {"role": role, "label": label, "lat": lat, "lon": lon, "precision": precision}
+            for role, (lat, lon, label, precision) in zip(("current", "pickup", "dropoff"), places)
         ],
         "geometry": simplify(route.geometry, keep=route.leg_bounds),
         "stops": stops,

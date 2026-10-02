@@ -5,4 +5,5 @@ urlpatterns = [
     path("health", views.health_check),
     path("plan-trip", views.plan_trip),
     path("autocomplete", views.autocomplete),
+    path("reverse", views.reverse_location),
 ]

@@ -16,6 +16,7 @@ from trips.hos.engine import Leg
 
 ORS_BASE_URL = "https://api.heigit.org"
 GEOCODE_PATH = "/pelias/v1/search"
+REVERSE_PATH = "/pelias/v1/reverse"
 DIRECTIONS_PATH = "/openrouteservice/v2/directions/driving-hgv/geojson"
 TIMEOUT_SECONDS = 15
 
@@ -45,6 +46,14 @@ class RoutingError(Exception):
 
 
 class AddressNotFound(RoutingError):
+    pass
+
+
+class OutsideUS(RoutingError):
+    pass
+
+
+class NoAddress(RoutingError):
     pass
 
 
@@ -139,8 +148,20 @@ def request_json(method, path, timeout=TIMEOUT_SECONDS, **kwargs):
     raise RoutingError(f"Routing request failed ({resp.status_code}): {message}")
 
 
+# How precise a match is, by Pelias layer: an exact point, or the centre of a city/county/ZIP area.
+LAYER_PRECISION = {
+    "address": "exact", "venue": "exact", "street": "exact",
+    "locality": "city", "county": "county", "postalcode": "zip",
+}
+
+
 def geocode(text):
     """Return (lat, lon, label) of the best US match for an address or place name."""
+    return geocode_place(text)[:3]
+
+
+def geocode_place(text):
+    """Like geocode(), plus the match precision: "exact", "city", "county" or "zip"."""
     text = (text or "").strip()
     if not text:
         raise AddressNotFound("Enter an address.")
@@ -167,7 +188,7 @@ def geocode(text):
 
     lon, lat = feature["geometry"]["coordinates"][:2]
     label = short_label(props.get("label") or text)
-    return lat, lon, label
+    return lat, lon, label, LAYER_PRECISION[props["layer"]]
 
 
 def _geocode_zip(text):
@@ -191,7 +212,27 @@ def _geocode_zip(text):
     lon, lat = features[0]["geometry"]["coordinates"][:2]
     city, state = props.get("locality"), props.get("region_a")
     label = f"{text} ({city}, {state})" if city and state else f"ZIP {text}"
-    return lat, lon, label
+    return lat, lon, label, "zip"
+
+
+def reverse_address(lat, lon):
+    """Readable US address label for a device position.
+
+    Tries the nearest address/street, then the city/county (rural highways often have no
+    address nearby). Raises OutsideUS for a non-US position, NoAddress when nothing is found.
+    """
+    for layers in ("address,street", "locality,county"):
+        data = request_json("GET", REVERSE_PATH, params={
+            "point.lat": lat, "point.lon": lon, "size": 1, "layers": layers,
+        })
+        features = data.get("features") or []
+        if not features:
+            continue
+        props = features[0].get("properties") or {}
+        if props.get("country_a") != "USA":
+            raise OutsideUS("Your location is outside the US. Enter a US address.")
+        return short_label(props.get("label") or "")
+    raise NoAddress("Couldn't find an address for your location. Enter it instead.")
 
 
 def short_label(label):

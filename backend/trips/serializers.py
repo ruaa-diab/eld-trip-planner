@@ -68,8 +68,25 @@ class LocationField(serializers.CharField):
         )
 
 
+class FiniteFloatField(serializers.FloatField):
+    def to_internal_value(self, data):
+        value = super().to_internal_value(data)
+        if not math.isfinite(value):
+            self.fail("invalid")
+        return value
+
+
+class CoordsSerializer(serializers.Serializer):
+    """A device position (from "Use my current location")."""
+    lat = FiniteFloatField(min_value=-90, max_value=90)
+    lon = FiniteFloatField(min_value=-180, max_value=180)
+
+
 class PlanTripSerializer(serializers.Serializer):
     current_location = LocationField()
+    # Exact position from "Use my current location"; when given, current_location is
+    # only its label and is not geocoded.
+    current_coords = CoordsSerializer(required=False)
     pickup_location = LocationField()
     dropoff_location = LocationField()
     current_cycle_used = serializers.FloatField(min_value=0, max_value=70)

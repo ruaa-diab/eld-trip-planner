@@ -3,11 +3,12 @@ import logging
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from trips.serializers import PlanTripSerializer
+from trips.serializers import CoordsSerializer, PlanTripSerializer
 from trips.services import planner
 from trips.services.autocomplete import suggest
 from trips.services.routing import (
-    ApiKeyError, NoRouteFound, QuotaExceeded, RoutingError, ServiceUnavailable,
+    ApiKeyError, NoAddress, NoRouteFound, OutsideUS, QuotaExceeded, RoutingError,
+    ServiceUnavailable, reverse_address,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,30 @@ def autocomplete(request):
     """Address suggestions; always 200, empty when unavailable."""
     labels = suggest(request.query_params.get("text", ""))
     return Response({"suggestions": [{"label": label} for label in labels]})
+
+
+@api_view(["GET"])
+def reverse_location(request):
+    """Readable US address for the browser's position ("Use my current location")."""
+    serializer = CoordsSerializer(data=request.query_params)
+    if not serializer.is_valid():
+        return error_response(400, "invalid_input", "Invalid coordinates.", fields=serializer.errors)
+    lat, lon = serializer.validated_data["lat"], serializer.validated_data["lon"]
+    try:
+        label = reverse_address(lat, lon)
+    except OutsideUS as e:
+        return error_response(422, "outside_us", str(e))
+    except NoAddress as e:
+        return error_response(422, "no_address", str(e))
+    except ApiKeyError as e:
+        logger.error("Route service API key problem: %s", e)
+        return error_response(500, "service_misconfigured", "The route service is not configured correctly.")
+    except (QuotaExceeded, ServiceUnavailable):
+        return error_response(503, "service_unavailable", "Location lookup is unavailable. Try again.")
+    except RoutingError as e:
+        logger.error("Unexpected reverse geocoding response: %s", e)
+        return error_response(502, "bad_gateway", "The route service returned an unexpected response.")
+    return Response({"label": label, "lat": lat, "lon": lon})
 
 
 @api_view(["POST"])

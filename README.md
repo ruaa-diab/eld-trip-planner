@@ -101,7 +101,7 @@ Decisions made where the assessment is silent:
 
 ## Privacy
 
-There is no database and no login. Nothing is stored: driver details are used only to draw the log sheets and are gone when the page closes. Only the three locations are sent to the map API.
+There is no database and no login. Nothing is stored: driver details are used only to draw the log sheets and are gone when the page closes. Only the three locations are sent to the map API. The browser's position is read only when the driver clicks "Use my current location"; it is then sent to the backend to look up a readable address and used as the current location, and is not stored.
 
 ## Tech stack
 

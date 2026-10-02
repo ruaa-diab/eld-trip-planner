@@ -28,7 +28,7 @@ function SectionBadge({ num, children }) {
  * values: { current_location, pickup_location, dropoff_location, cycle, date, time, details: {...} }
  * errors: { [field]: message, details: { [key]: message } }
  */
-export default function TripForm({ values, errors, generalError, focusRequest, onChange, onSubmit }) {
+export default function TripForm({ values, errors, generalError, focusRequest, onChange, onSubmit, locating, onLocate }) {
   const formRef = useRef(null)
   const detailErrors = errors.details || {}
   const hasDetailErrors = Object.keys(detailErrors).length > 0
@@ -78,7 +78,7 @@ export default function TripForm({ values, errors, generalError, focusRequest, o
             )}
 
             <SectionBadge num="01">Route</SectionBadge>
-            <RouteFields values={values} errors={errors} onChange={set} />
+            <RouteFields values={values} errors={errors} onChange={set} locating={locating} onLocate={onLocate} />
 
             <div className="lane-line form__divider" aria-hidden="true" />
 

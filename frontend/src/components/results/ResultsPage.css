@@ -478,3 +478,11 @@
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+/* "(city center)" / "(ZIP area)" after an area-level location. */
+.place-note {
+  font-size: 0.7em;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}

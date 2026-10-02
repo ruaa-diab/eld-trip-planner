@@ -61,3 +61,23 @@ export async function planTrip(payload, signal) {
   if (error) throw new ApiError(resp.status, error.code, error.message, error.fields, error.reasons)
   throw new ApiError(resp.status, 'unknown_error', `Something went wrong (HTTP ${resp.status}). Try again.`)
 }
+
+/** GET /api/reverse: readable US address for a device position. Rejects with ApiError. */
+export async function reverseLocation(lat, lon, signal) {
+  let resp
+  try {
+    resp = await fetch(`${API_URL}/api/reverse?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`, { signal })
+  } catch (err) {
+    if (err.name === 'AbortError') throw err
+    throw new ApiError(0, 'network_error', "Couldn't look up your location. Enter it instead.")
+  }
+  let body = null
+  try {
+    body = await resp.json()
+  } catch {
+    // handled below
+  }
+  if (resp.ok && body?.label) return body
+  const error = body?.error
+  throw new ApiError(resp.status, error?.code || 'unknown_error', error?.message || "Couldn't look up your location. Enter it instead.")
+}

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ApiError, planTrip } from './api.js'
+import { ApiError, planTrip, reverseLocation } from './api.js'
 import { CYCLE_MAX } from './components/CycleField.jsx'
 import { emptyDetails } from './components/DriverDetails.jsx'
 import Header from './components/Header.jsx'
@@ -25,6 +25,7 @@ function initialValues() {
   const { date, time } = nowLocal()
   return {
     current_location: '',
+    current_coords: null, // { lat, lon } from "Use my current location"; dropped on any edit
     pickup_location: '',
     dropoff_location: '',
     cycle: '',
@@ -53,6 +54,7 @@ function validate(values) {
 function toPayload(values) {
   return {
     current_location: values.current_location.trim(),
+    ...(values.current_coords && { current_coords: values.current_coords }),
     pickup_location: values.pickup_location.trim(),
     dropoff_location: values.dropoff_location.trim(),
     current_cycle_used: Number(values.cycle),
@@ -99,8 +101,12 @@ export default function App() {
   const [result, setResult] = useState(null) // { plan, departure }
   const controllerRef = useRef(null)
 
-  // Editing a field clears its error.
+  // Editing a field clears its error. Editing the current location drops the device position,
+  // so a typed address is always geocoded normally.
   const change = (next) => {
+    if (next.current_location !== values.current_location && next.current_coords === values.current_coords) {
+      next = { ...next, current_coords: null }
+    }
     setErrors((prev) => {
       const out = { ...prev }
       for (const field of LOCATION_FIELDS) if (next[field] !== values[field]) delete out[field]
@@ -116,6 +122,35 @@ export default function App() {
       return out
     })
     setValues(next)
+  }
+
+  // "Use my current location": browser position → readable address → field + exact coordinates.
+  const [locating, setLocating] = useState(false)
+  const locateCurrent = () => {
+    const fail = (message) => {
+      setLocating(false)
+      setErrors((prev) => ({ ...prev, current_location: message }))
+    }
+    setLocating(true)
+    setErrors((prev) => {
+      const { current_location: _, ...rest } = prev
+      return rest
+    })
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const place = await reverseLocation(coords.latitude, coords.longitude)
+          setLocating(false)
+          setValues((v) => ({ ...v, current_location: place.label, current_coords: { lat: place.lat, lon: place.lon } }))
+        } catch (err) {
+          fail(err.message || "Couldn't look up your location. Enter it instead.")
+        }
+      },
+      (err) => {
+        fail(err.code === err.PERMISSION_DENIED ? 'Location access was blocked' : "Couldn't get your location. Enter it instead.")
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+    )
   }
 
   const backToForm = () => {
@@ -171,6 +206,8 @@ export default function App() {
           focusRequest={focusRequest}
           generalError={generalError}
           onChange={change}
+          locating={locating}
+          onLocate={'geolocation' in navigator ? locateCurrent : null}
           onSubmit={submit}
         />
       )}

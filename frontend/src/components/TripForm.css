@@ -448,3 +448,54 @@
   font-size: 13px;
   color: var(--text-muted);
 }
+
+/* ── Location hint and "Use my current location" ── */
+
+.route__field {
+  position: relative;
+}
+
+.route__field--locate .input {
+  padding-right: 52px;
+}
+
+.route__hint {
+  margin-top: 5px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.locate {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.locate:hover:not(:disabled) {
+  background: var(--surface-raised);
+}
+
+.locate:disabled {
+  cursor: progress;
+}
+
+.locate__icon--busy {
+  animation: locate-spin 1s linear infinite;
+}
+
+@keyframes locate-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

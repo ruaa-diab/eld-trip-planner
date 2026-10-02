@@ -7,9 +7,8 @@ import math
 from bisect import bisect_left
 from concurrent.futures import ThreadPoolExecutor
 
-from trips.services.routing import request_json
+from trips.services.routing import REVERSE_PATH, request_json
 
-REVERSE_PATH = "/pelias/v1/reverse"
 REVERSE_TIMEOUT_SECONDS = 5     # names are cosmetic; don't hold the trip up
 REVERSE_LAYERS = "locality,county"
 MAX_WORKERS = 8

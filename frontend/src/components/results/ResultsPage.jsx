@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { formatClock, formatDayLong, isBlank } from '../../format.js'
+import { formatClock, formatDayLong, isBlank, precisionNote } from '../../format.js'
 import MiniSheet from '../logs/MiniSheet.jsx'
 import Directions from './Directions.jsx'
 import StatSigns from './StatSigns.jsx'
@@ -7,9 +7,22 @@ import RouteMap from './RouteMap.jsx'
 import StopTimeline, { buildTimeline } from './StopTimeline.jsx'
 import './ResultsPage.css'
 
+/** A waypoint label, with "(city center)" / "(ZIP area)" when it was matched as an area. */
+function PlaceName({ place }) {
+  const note = precisionNote(place.precision)
+  return (
+    <>
+      {place.label}
+      {note && <span className="place-note"> {note}</span>}
+    </>
+  )
+}
+
 function Subtitle({ plan }) {
   const { details } = plan
-  const parts = [`Pickup in ${plan.waypoints[1].label}`]
+  const pickup = plan.waypoints[1]
+  const note = precisionNote(pickup.precision)
+  const parts = [`Pickup in ${pickup.label}${note ? ` ${note}` : ''}`]
   if (!isBlank(details.truck_number)) parts.push(`Tractor ${details.truck_number.trim()}`)
   if (!isBlank(details.driver_name)) parts.push(details.driver_name.trim())
   return <div className="results__sub">{parts.join(' • ')}</div>
@@ -25,8 +38,7 @@ export default function ResultsPage({ plan, departure, onEdit, onOpenLogs }) {
   const items = useMemo(() => buildTimeline(plan, departure), [plan, departure])
   // { index, source: 'timeline' | 'map' }; a new object each click so re-clicking re-centers.
   const [selected, setSelected] = useState(null)
-  const from = plan.waypoints[0].label
-  const to = plan.waypoints[2].label
+  const [from, , to] = plan.waypoints
 
   const selectFromTimeline = (index) => {
     // On narrow screens the map is above the timeline: bring it into view first.
@@ -46,7 +58,7 @@ export default function ResultsPage({ plan, departure, onEdit, onOpenLogs }) {
               Trip plan • departs {formatDayLong(departure)} at {formatClock(departure)}
             </div>
             <h1 className="results__title">
-              {from} → {to}
+              <PlaceName place={from} /> → <PlaceName place={to} />
             </h1>
             <Subtitle plan={plan} />
           </div>

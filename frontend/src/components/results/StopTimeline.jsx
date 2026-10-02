@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react'
-import { formatClock, formatDay, formatDuration, minutesBetween, parseLocal } from '../../format.js'
+import { formatClock, formatDay, formatDuration, minutesBetween, parseLocal, precisionNote } from '../../format.js'
 import StopIcon, { STOP_KINDS } from './StopIcon.jsx'
+
+// Stops whose location is a geocoded waypoint (index into plan.waypoints).
+const WAYPOINT_OF = { pickup: 1, dropoff: 2 }
 
 /**
  * Timeline items: the current location at departure, then every API stop. Between items
@@ -11,7 +14,7 @@ export function buildTimeline(plan, departure) {
   const start = plan.waypoints[0]
   const items = [
     {
-      kind: 'start', name: start.label, lat: start.lat, lon: start.lon,
+      kind: 'start', name: start.label, note: precisionNote(start.precision), lat: start.lat, lon: start.lon,
       start: departure, end: departure, miles: 0, durationMin: 0, tag: 'Start',
     },
   ]
@@ -19,6 +22,8 @@ export function buildTimeline(plan, departure) {
     items.push({
       kind: s.type,
       name: s.name,
+      // Pickup/dropoff are the geocoded waypoints; other stops are points on the route.
+      note: precisionNote(WAYPOINT_OF[s.type] ? plan.waypoints[WAYPOINT_OF[s.type]].precision : 'exact'),
       lat: s.lat,
       lon: s.lon,
       start: parseLocal(s.start),
@@ -93,7 +98,10 @@ export default function StopTimeline({ items, days, selected, onSelect }) {
                   <span className="timeline__kind" style={{ color: kind.text }}>
                     {kind.name}
                   </span>
-                  <span className="timeline__name">{item.name}</span>
+                  <span className="timeline__name">
+                    {item.name}
+                    {item.note && <span className="place-note"> {item.note}</span>}
+                  </span>
                   <span className="timeline__time">
                     {formatDay(item.start)} • {formatClock(item.start)}
                   </span>
