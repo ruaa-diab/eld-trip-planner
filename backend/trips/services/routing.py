@@ -6,7 +6,7 @@ Endpoints on https://api.heigit.org (replaces the deprecated api.openrouteservic
 The API key goes in the Authorization header.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import requests
 from django.conf import settings
@@ -63,6 +63,10 @@ class Route:
     legs: list[Leg]                 # current → pickup, pickup → dropoff
     geometry: list[list[float]]     # [lat, lon] points, ready for Leaflet
     steps: list[list[Step]]         # turn-by-turn, one list per leg
+    waypoints: list[tuple]          # (lat, lon, label) for current, pickup, dropoff
+    leg_bounds: list[int]           # geometry indices of the waypoints; leg i = [b[i], b[i+1]]
+    # Cumulative haversine miles per leg, filled lazily by stops.locate().
+    leg_cum_miles: list | None = field(default=None, repr=False, compare=False)
 
 
 def _error_details(resp):
@@ -79,7 +83,8 @@ def _error_details(resp):
     return None, str(body)[:200]
 
 
-def _request(method, path, **kwargs):
+def request_json(method, path, timeout=TIMEOUT_SECONDS, **kwargs):
+    """Call an api.heigit.org path and return the JSON body, mapping failures to RoutingError."""
     key = settings.ORS_API_KEY
     if not key:
         raise ApiKeyError("The OpenRouteService API key is missing (set ORS_API_KEY).")
@@ -88,7 +93,7 @@ def _request(method, path, **kwargs):
         resp = requests.request(
             method, ORS_BASE_URL + path,
             headers={"Authorization": key},
-            timeout=TIMEOUT_SECONDS,
+            timeout=timeout,
             **kwargs,
         )
     except requests.Timeout:
@@ -122,7 +127,7 @@ def geocode(text):
     if not text:
         raise AddressNotFound("Enter an address.")
 
-    data = _request("GET", GEOCODE_PATH, params={
+    data = request_json("GET", GEOCODE_PATH, params={
         "text": text,
         "size": 1,
         "boundary.country": "US",
@@ -134,13 +139,15 @@ def geocode(text):
     feature = features[0]
     lon, lat = feature["geometry"]["coordinates"][:2]
     label = feature.get("properties", {}).get("label") or text
+    if label.endswith(", USA"):
+        label = label[:-len(", USA")]
     return lat, lon, label
 
 
 def get_route(current, pickup, dropoff):
     """Route current → pickup → dropoff. Each point is a (lat, lon, label) tuple."""
     points = [current, pickup, dropoff]
-    data = _request("POST", DIRECTIONS_PATH, json={
+    data = request_json("POST", DIRECTIONS_PATH, json={
         "coordinates": [[lon, lat] for lat, lon, _ in points],
         "units": "mi",
         "instructions": True,
@@ -150,10 +157,13 @@ def get_route(current, pickup, dropoff):
         feature = data["features"][0]
         segments = feature["properties"]["segments"]
         coords = feature["geometry"]["coordinates"]
+        way_points = list(feature["properties"]["way_points"])
     except (KeyError, IndexError, TypeError):
         raise RoutingError("The routing service returned an unexpected response.")
     if len(segments) != 2:
         raise RoutingError(f"Expected 2 route legs, got {len(segments)}.")
+    if len(way_points) != 3:
+        raise RoutingError("The routing service returned an unexpected response.")
 
     # ORS omits distance/duration when they are 0 (e.g. pickup at the current location).
     legs = [
@@ -178,4 +188,5 @@ def get_route(current, pickup, dropoff):
         for seg in segments
     ]
     geometry = [[c[1], c[0]] for c in coords]
-    return Route(legs=legs, geometry=geometry, steps=steps)
+    return Route(legs=legs, geometry=geometry, steps=steps,
+                 waypoints=list(points), leg_bounds=way_points)

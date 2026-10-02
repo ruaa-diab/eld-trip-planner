@@ -11,9 +11,9 @@ from trips.services.routing import (
     ServiceUnavailable, geocode, get_route,
 )
 
-CHICAGO = (41.88, -87.63, "Chicago, IL, USA")
-ROCKFORD = (42.27, -89.09, "Rockford, IL, USA")
-DENVER = (39.74, -104.99, "Denver, CO, USA")
+CHICAGO = (41.88, -87.63, "Chicago, IL")
+ROCKFORD = (42.27, -89.09, "Rockford, IL")
+DENVER = (39.74, -104.99, "Denver, CO")
 
 
 def response(status=200, body=None, text=""):
@@ -41,7 +41,7 @@ ROUTE_BODY = {"type": "FeatureCollection", "features": [{
     "geometry": {"type": "LineString", "coordinates": [
         [-87.63, 41.88], [-88.5, 42.1], [-89.09, 42.27], [-97.0, 41.0], [-104.99, 39.74],
     ]},
-    "properties": {"segments": [
+    "properties": {"way_points": [0, 2, 4], "segments": [
         {"distance": 89.4, "duration": 5400.0, "steps": [
             step("Head west on Madison Street", "Madison Street", 0.5, 90.0),
             step("Arrive at Rockford", "-", 0.0, 0.0),
@@ -58,8 +58,9 @@ ROUTE_BODY = {"type": "FeatureCollection", "features": [{
 class GeocodeTest(SimpleTestCase):
 
     def test_returns_lat_lon_label_of_first_match(self, req):
-        req.return_value = response(body=geocode_body(CHICAGO, DENVER))
-        self.assertEqual(geocode("  Chicago, IL "), CHICAGO)
+        pelias_label = (41.88, -87.63, "Chicago, IL, USA")
+        req.return_value = response(body=geocode_body(pelias_label, DENVER))
+        self.assertEqual(geocode("  Chicago, IL "), CHICAGO)     # ", USA" stripped
 
         method, url = req.call_args.args
         kwargs = req.call_args.kwargs
@@ -134,11 +135,13 @@ class GetRouteTest(SimpleTestCase):
         self.assertEqual(first.distance_miles, 0.5)
         self.assertEqual(first.duration_min, 1.5)
         self.assertEqual(route.steps[1][0].instruction, "Turn left onto I-80 W")
+        self.assertEqual(route.waypoints, [CHICAGO, ROCKFORD, DENVER])
+        self.assertEqual(route.leg_bounds, [0, 2, 4])
 
     def test_zero_length_segment_without_distance_or_duration(self, req):
         body = {"features": [{
             "geometry": {"coordinates": [[-87.63, 41.88], [-104.99, 39.74]]},
-            "properties": {"segments": [
+            "properties": {"way_points": [0, 0, 1], "segments": [
                 {"steps": []},                                  # pickup at current location
                 {"distance": 1000.0, "duration": 57600.0, "steps": []},
             ]},
@@ -179,7 +182,7 @@ class GetRouteTest(SimpleTestCase):
 
     def test_wrong_segment_count_raises(self, req):
         body = {"features": [{"geometry": {"coordinates": []},
-                              "properties": {"segments": [{"distance": 1, "duration": 1}]}}]}
+                              "properties": {"way_points": [0, 0], "segments": [{"distance": 1, "duration": 1}]}}]}
         req.return_value = response(body=body)
         with self.assertRaisesRegex(RoutingError, "Expected 2 route legs, got 1"):
             get_route(CHICAGO, ROCKFORD, DENVER)
