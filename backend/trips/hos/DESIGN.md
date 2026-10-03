@@ -118,7 +118,7 @@ LOOP  while leg_idx < len(legs):
   leg   = legs[leg_idx]
   zero_leg = (leg.distance_miles == 0 or leg.drive_hours == 0)   # Fix 2
 
-  ── DRIVE SEGMENT ──────────────────────────────────────────────
+  DRIVE SEGMENT
   if not zero_leg:
     speed = leg.distance_miles / leg_dm   # mi/min, float
 
@@ -148,7 +148,7 @@ LOOP  while leg_idx < len(legs):
         miles_since_fuel  += miles     ; leg_min_rem      -= drive_for
         clock             += timedelta(minutes=drive_for)
 
-  ── CHECK ORDER ────────────────────────────────────────────────
+  CHECK ORDER
   shift_elapsed = int((clock − shift_start).total_seconds() // 60)
 
   # 1. Pickup or dropoff?

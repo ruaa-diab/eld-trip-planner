@@ -24,8 +24,8 @@ class LocalDateTimeField(serializers.Field):
             raise serializers.ValidationError("Enter a date and time like 2026-10-05T06:00.")
         try:
             dt = datetime.fromisoformat(value.strip())
-        except ValueError:
-            raise serializers.ValidationError("Enter a date and time like 2026-10-05T06:00.")
+        except ValueError as e:
+            raise serializers.ValidationError("Enter a date and time like 2026-10-05T06:00.") from e
         if dt.tzinfo is not None:
             raise serializers.ValidationError(
                 "Enter the time without a time zone; it is read as home terminal time.")

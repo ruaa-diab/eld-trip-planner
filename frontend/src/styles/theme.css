@@ -1,4 +1,4 @@
-/* Theme from the approved v3 design (design/ELD Trip Planner v3.dc.html). */
+/* Theme from the v3 design (design/exports/v3). */
 
 :root {
   /* Surfaces */
@@ -16,7 +16,6 @@
   --text: #f1f4f8;
   --text-strong: #ffffff;
   --text-muted: #a7b3c5;
-  --text-faint: #94a3b8;
   --placeholder: #6f7f96;
 
   /* Accent: highway amber */
@@ -124,7 +123,7 @@ input::placeholder {
   color: var(--placeholder);
 }
 
-/* ── Shared building blocks ── */
+/* Shared building blocks */
 
 .page {
   padding: var(--page-pad);

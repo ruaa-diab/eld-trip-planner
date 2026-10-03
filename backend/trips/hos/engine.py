@@ -68,7 +68,9 @@ def plan_trip(
             end_miles=end_miles,
         ))
 
-    # INIT
+    # Names follow DESIGN.md: leg_dm is the current leg's total drive minutes,
+    # leg_min_rem the drive minutes left on it, h_fuel the drive minutes until
+    # 1,000 miles since the last fuel stop.
     clock = shift_start = start_dt
     drive_since_break = drive_this_shift = 0
     cycle = round(cycle_used * 60)
@@ -90,7 +92,7 @@ def plan_trip(
         if zero_leg:
             leg_min_rem = 0   # straight to pickup/dropoff; speed never computed
 
-        # ── DRIVE SEGMENT ──
+        # Drive until the nearest limit or the end of the leg.
         if not zero_leg:
             speed = leg.distance_miles / leg_dm   # mi/min
 
@@ -123,7 +125,10 @@ def plan_trip(
                     leg_min_rem -= drive_for
                     clock += timedelta(minutes=drive_for)
 
-        # ── CHECK ORDER ──
+        # Then decide the next stop. The order matters: one stop can cover several needs.
+        # Pickup/dropoff come first, so they still happen past the 11/14/70 h limits
+        # (cases 4 and 4b). Fuel comes before the 30-min break, so a fuel stop counts as
+        # the break (case 3b).
         shift_elapsed = int((clock - shift_start).total_seconds() // 60)
 
         # 1. Pickup or dropoff?

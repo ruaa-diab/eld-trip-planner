@@ -8,7 +8,15 @@ from rest_framework.test import APIClient
 from trips.services import routing
 from trips.services.routing import NoRouteFound, UnroutablePoint, get_route
 from trips.tests.test_api import FakeORS, ok, payload, route_body, status
-from trips.tests.test_routing import CHICAGO, DENVER, ROCKFORD, ROUTE_BODY, leg_of, per_leg, response
+from trips.tests.test_routing import (
+    CHICAGO,
+    DENVER,
+    ROCKFORD,
+    ROUTE_BODY,
+    leg_of,
+    per_leg,
+    response,
+)
 
 LEG_STARTS = {(-87.63, 41.88): 0, (-89.09, 42.27): 1}     # test_routing points: leg index by start
 
@@ -78,8 +86,9 @@ class NoRoadApiTest(SimpleTestCase):
         def answer(request_json):
             for i, (x, y) in enumerate(request_json["coordinates"]):
                 if (round(y, 6), round(x, 6)) == (lat, lon):
-                    return status(404, {"error": {"code": 2010, "message":
-                        f"Could not find routable point within a radius of 5000.0 meters of specified coordinate {i}: {x} {y}."}})
+                    message = (f"Could not find routable point within a radius of 5000.0 meters "
+                               f"of specified coordinate {i}: {x} {y}.")
+                    return status(404, {"error": {"code": 2010, "message": message}})
             return ok(leg_of(route_body(), request_json))     # the other leg routes normally
         return answer
 
@@ -89,7 +98,9 @@ class NoRoadApiTest(SimpleTestCase):
     def test_county_center_without_a_road_names_the_field_and_county(self):
         self.fake.search["Los Angeles County, CA"] = ok({"features": [{
             "geometry": {"coordinates": [LA_COUNTY[1], LA_COUNTY[0]]},
-            "properties": {"label": "Los Angeles County, CA, USA", "layer": "county", "confidence": 1, "region_a": "CA"},
+            "properties": {
+                "label": "Los Angeles County, CA, USA", "layer": "county", "confidence": 1, "region_a": "CA",
+            },
         }]})
         self.fake.directions_fn = self.unreachable(*LA_COUNTY)
         resp = self.post(pickup_location="Los Angeles County, CA")

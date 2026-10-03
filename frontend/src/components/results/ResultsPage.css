@@ -19,7 +19,7 @@
   }
 }
 
-/* ── Heading ── */
+/* Heading */
 
 .results__top {
   display: flex;
@@ -89,7 +89,7 @@
   background: var(--accent-hover);
 }
 
-/* ── Mile-marker stat signs ── */
+/* Mile-marker stat signs */
 
 /* Four signs in one row when they fit, otherwise 2 x 2 (never 3 + 1). Sized by the
    space the results column actually has, not the window. */
@@ -200,7 +200,7 @@
   font-weight: 700;
 }
 
-/* ── Map + stops ── */
+/* Map + stops */
 
 .results__main {
   display: flex;
@@ -215,18 +215,8 @@
   display: flex;
 }
 
-.placeholder-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px dashed var(--border-strong);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  color: var(--text-muted);
-  font-size: 15px;
-}
 
-/* ── Stop timeline ── */
+/* Stop timeline */
 
 .timeline {
   flex: 1 1 360px;
@@ -353,7 +343,7 @@
   color: var(--text-muted);
 }
 
-/* ── Daily log sheets ── */
+/* Daily log sheets */
 
 .results__divider {
   margin: 34px 0 26px;
@@ -384,7 +374,7 @@
   font-weight: 700;
 }
 
-/* ── Directions ── */
+/* Directions */
 
 .directions {
   margin-top: 28px;

@@ -153,6 +153,3 @@ Repeat until dropoff is done.
 - Day 2 (Fri, ~5h): HOS engine + tests above, then the API endpoint.
 - Day 3 (Sat, ~5h): form, map + markers, directions list, log sheet SVG.
 - Day 4 (Sun, ~3h): UI polish, edge cases, README (with all decisions in section 6), Loom, submit.
-
-Work split: Claude writes setup, UI, and SVG drawing. Ruaa designs the HOS engine logic and
-reviews every line of it.

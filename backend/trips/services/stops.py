@@ -1,7 +1,4 @@
-"""Place HOS stops on the route map and give them city names for the log remarks.
-
-Reverse geocoding: GET https://api.heigit.org/pelias/v1/reverse (Pelias /v1/reverse).
-"""
+"""Place HOS stops on the route and name them (city or county) for the log remarks."""
 
 import math
 from bisect import bisect_left

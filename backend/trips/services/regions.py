@@ -17,7 +17,7 @@ US_STATES = {
     "DC": "District of Columbia", "PR": "Puerto Rico",
 }
 
-# Canadian provinces and territories: the non-US regions a US trucking address is mixed up with.
+# Canadian provinces and territories, rejected as outside the US.
 CANADIAN_REGIONS = {
     "AB": "Alberta", "BC": "British Columbia", "MB": "Manitoba", "NB": "New Brunswick",
     "NL": "Newfoundland and Labrador", "NS": "Nova Scotia", "NT": "Northwest Territories",

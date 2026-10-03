@@ -1,4 +1,4 @@
-/* ── Paper sheet (v3 design) ── */
+/* Paper sheet (v3 design) */
 
 .sheet {
   --paper: #faf7f2;
@@ -178,7 +178,7 @@
   margin-top: 16px;
 }
 
-/* ── Grid ── */
+/* Grid */
 
 .sheet__grid-scroll {
   margin-top: 30px;
@@ -229,7 +229,7 @@
   color: var(--ink-muted);
 }
 
-/* ── Remarks ── */
+/* Remarks */
 
 .sheet__remarks-title {
   margin-top: 4px;
@@ -328,7 +328,7 @@
   color: var(--ink-muted);
 }
 
-/* ── Recap ── */
+/* Recap */
 
 .recap {
   display: flex;
@@ -408,7 +408,7 @@
   color: var(--ink-soft);
 }
 
-/* ── Mini sheets (results page) ── */
+/* Mini sheets (results page) */
 
 .mini-sheet {
   display: flex;
@@ -504,7 +504,7 @@
   color: #ffffff;
 }
 
-/* ── Viewer ── */
+/* Viewer */
 
 .viewer__back {
   font-size: 15px;
@@ -639,7 +639,7 @@
   color: var(--bg);
 }
 
-/* ── Mobile ── */
+/* Mobile */
 
 @media (max-width: 759px) {
   .sheet {
@@ -670,7 +670,7 @@
   }
 }
 
-/* ── Print: every day, one sheet per page, white paper ── */
+/* Print: every day, one sheet per page, white paper */
 
 .print-logs {
   display: none;

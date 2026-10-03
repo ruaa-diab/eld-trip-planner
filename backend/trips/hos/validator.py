@@ -34,7 +34,7 @@ def validate_trip(events, cycle_used, legs) -> list[str]:
     if not events:
         return ["trip has no events"]
 
-    # ── Order and continuity ──
+    # Order and continuity
     for i, e in enumerate(events, 1):
         if e.end <= e.start:
             flag(i, f"{e.type} has non-positive duration ({e.start} → {e.end})")
@@ -45,7 +45,7 @@ def validate_trip(events, cycle_used, legs) -> list[str]:
             elif e.start < prev.end:
                 flag(i, f"overlaps previous event by {_minutes(e.start, prev.end):g} min")
 
-    # ── Time-based limits ──
+    # Time-based limits
     cycle = round(cycle_used * 60)
     shift_start = events[0].start     # driver starts on a fresh shift (SPEC §6)
     shift_drive = 0.0
@@ -78,9 +78,9 @@ def validate_trip(events, cycle_used, legs) -> list[str]:
             if cycle + dur > CYCLE_MAX:
                 flag(i, f"driving with cycle at {cycle:g} min; would reach "
                         f"{cycle + dur:g} > {CYCLE_MAX}")
-            window_end = _minutes(shift_start, e.end)
-            if window_end > SHIFT_WINDOW_MAX:
-                flag(i, f"driving until {window_end:g} min after shift start "
+            minutes_into_shift = _minutes(shift_start, e.end)
+            if minutes_into_shift > SHIFT_WINDOW_MAX:
+                flag(i, f"driving until {minutes_into_shift:g} min after shift start "
                         f"(limit {SHIFT_WINDOW_MAX})")
             shift_drive += dur
             if shift_drive > SHIFT_DRIVE_MAX:
@@ -103,7 +103,7 @@ def validate_trip(events, cycle_used, legs) -> list[str]:
 
         cycle += dur
 
-    # ── Distance and stops ──
+    # Distance and stops
     driven = sum(e.end_miles - e.start_miles for e in events if e.status == "driving")
     planned = sum(leg.distance_miles for leg in legs)
     if abs(driven - planned) > MILES_TOL:

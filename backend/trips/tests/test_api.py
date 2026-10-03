@@ -85,7 +85,9 @@ class FakeORS:
         if "/directions/" in url:
             # get_route() asks for one leg per request: answer with that leg of a 2-leg body.
             body = self.directions.json.return_value
-            if isinstance(body, dict) and len(body.get("features", [{}])[0].get("properties", {}).get("segments", [])) == 2:
+            features = body.get("features") if isinstance(body, dict) else None
+            segments = features[0].get("properties", {}).get("segments", []) if features else []
+            if len(segments) == 2:
                 return ok(leg_of(body, kwargs["json"]))
             return self.directions
         raise AssertionError(f"unexpected URL {url}")
@@ -122,8 +124,7 @@ class PlanTripApiTest(SimpleTestCase):
     def post(self, body=None):
         return self.client.post(URL, body if body is not None else payload(), format="json")
 
-    # ── Happy path ──
-
+    # Happy path
     def test_full_plan_response(self):
         details = {"driver_name": "Ruaa D.", "truck_number": "T-12"}
         resp = self.post(payload(details=details))
@@ -189,8 +190,7 @@ class PlanTripApiTest(SimpleTestCase):
         data = self.post(payload(start_time="2026-01-05T06:00:00")).json()
         self.assertEqual(data["stops"][0]["start"], "2026-01-05T08:00:00")   # no offset added
 
-    # ── Input validation ──
-
+    # Input validation
     def test_invalid_input_returns_400_per_field(self):
         cases = {
             "missing field": ({k: v for k, v in payload().items() if k != "pickup_location"},
@@ -217,8 +217,7 @@ class PlanTripApiTest(SimpleTestCase):
             with self.subTest(cycle=cycle):
                 self.assertEqual(self.post(payload(current_cycle_used=cycle)).status_code, 200)
 
-    # ── Routing errors ──
-
+    # Routing errors
     def test_address_not_found_names_the_field(self):
         resp = self.post(payload(pickup_location="Nowhereville"))
         self.assertEqual(resp.status_code, 400)
@@ -268,7 +267,9 @@ class PlanTripApiTest(SimpleTestCase):
     def test_three_letters_is_enough(self):
         self.fake.search["Ccc"] = ok({"features": [{
             "geometry": {"coordinates": [-85.5, 33.6]},
-            "properties": {"label": "CCC, Cleburne County, AL, USA", "layer": "venue", "confidence": 1, "region_a": "AL"},
+            "properties": {
+                "label": "CCC, Cleburne County, AL, USA", "layer": "venue", "confidence": 1, "region_a": "AL",
+            },
         }]})
         resp = self.post(payload(current_location="Ccc"))
         self.assertEqual(resp.status_code, 200, resp.content)
@@ -342,8 +343,7 @@ class PlanTripApiTest(SimpleTestCase):
             resp = self.post()
         self.assertEqual(resp.status_code, 502)
 
-    # ── Safety net ──
-
+    # Safety net
     def test_validator_violation_returns_500_and_logs(self):
         with mock.patch("trips.services.planner.validate_trip",
                         return_value=["event 3: 700 driving min this shift (limit 660)"]), \

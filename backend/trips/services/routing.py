@@ -124,7 +124,6 @@ class Route:
     legs: list[Leg]                 # current → pickup, pickup → dropoff
     geometry: list[list[float]]     # [lat, lon] points, ready for Leaflet
     steps: list[list[Step]]         # turn-by-turn, one list per leg
-    waypoints: list[tuple]          # (lat, lon, label) for current, pickup, dropoff
     leg_bounds: list[int]           # geometry indices of the waypoints; leg i = [b[i], b[i+1]]
     # Cumulative haversine miles per leg, filled lazily by stops.locate().
     leg_cum_miles: list | None = field(default=None, repr=False, compare=False)
@@ -157,16 +156,16 @@ def request_json(method, path, timeout=TIMEOUT_SECONDS, **kwargs):
             timeout=timeout,
             **kwargs,
         )
-    except requests.Timeout:
-        raise ServiceUnavailable("The routing service timed out. Try again.")
-    except requests.RequestException:
-        raise ServiceUnavailable("Could not reach the routing service. Try again.")
+    except requests.Timeout as e:
+        raise ServiceUnavailable("The routing service timed out. Try again.") from e
+    except requests.RequestException as e:
+        raise ServiceUnavailable("Could not reach the routing service. Try again.") from e
 
     if resp.status_code == 200:
         try:
             return resp.json()
-        except ValueError:
-            raise RoutingError("The routing service returned an unreadable response.")
+        except ValueError as e:
+            raise RoutingError("The routing service returned an unreadable response.") from e
 
     code, message = _error_details(resp)
     if resp.status_code in (401, 403):
@@ -304,8 +303,8 @@ def _route_leg(a, b):
         segments = feature["properties"]["segments"]
         coords = feature["geometry"]["coordinates"]
         way_points = list(feature["properties"]["way_points"])
-    except (KeyError, IndexError, TypeError):
-        raise RoutingError("The routing service returned an unexpected response.")
+    except (KeyError, IndexError, TypeError) as e:
+        raise RoutingError("The routing service returned an unexpected response.") from e
     if len(segments) != 1:
         raise RoutingError(f"Expected 1 route segment per leg, got {len(segments)}.")
     if len(way_points) != 2 or not coords:
@@ -316,10 +315,9 @@ def _route_leg(a, b):
 def get_route(current, pickup, dropoff):
     """Route current → pickup → dropoff. Each point is a (lat, lon, label) tuple.
 
-    Each leg is its own request (sent in parallel): ORS limits the distance of a single
-    request, so a long trip (e.g. Columbus → Los Angeles → Pennsylvania, ~4,700 mi) fails
-    as one request even when each leg is within the limit. The legs are combined into the
-    same Route a single request produced.
+    One request per leg, in parallel: ORS caps the distance of a single request, and a long
+    trip (Columbus → Los Angeles → Bradford County, PA, ~4,900 mi) goes over it even when
+    each leg doesn't.
     """
     points = [current, pickup, dropoff]
     def leg(index):
@@ -370,4 +368,4 @@ def get_route(current, pickup, dropoff):
     ]
     geometry = [[c[1], c[0]] for c in coords]
     return Route(legs=legs, geometry=geometry, steps=steps,
-                 waypoints=list(points), leg_bounds=leg_bounds)
+                 leg_bounds=leg_bounds)

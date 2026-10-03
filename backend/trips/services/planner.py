@@ -7,8 +7,14 @@ from trips.hos.engine import plan_trip
 from trips.hos.validator import validate_trip
 from trips.services.logs import CYCLE_LIMIT_MIN, build_logs
 from trips.services.routing import (
-    AddressNotFound, InvalidPlace, OutsideUSInput, StateMismatch, UnroutableLeg, UnroutablePoint,
-    geocode_place, get_route,
+    AddressNotFound,
+    InvalidPlace,
+    OutsideUSInput,
+    StateMismatch,
+    UnroutableLeg,
+    UnroutablePoint,
+    geocode_place,
+    get_route,
 )
 from trips.services.stops import haversine_miles, locate, name_stops
 
@@ -135,8 +141,8 @@ def plan(data):
         _, _, label, precision = places[e.point_index]
         raise AddressesNotFound({field: "no_road"}, data, {field: no_road_message(label, precision)}) from e
     except UnroutableLeg as e:
-        # Highlight the leg's destination. Name the places as typed: the geocoder's match can
-        # read differently (live, "Honolulu, HI" resolves to "Kaneohe, HI").
+        # Highlight the leg's destination. Use the typed text: the geocoder's label can differ
+        # (Pelias matches "Honolulu, HI" to "Kaneohe, HI").
         start, end = LOCATION_FIELDS[e.leg_index], LOCATION_FIELDS[e.leg_index + 1]
         message = (f"No truck route from {data[start].strip()} to {data[end].strip()}. "
                    "Is there a road connection?")
@@ -178,7 +184,7 @@ def plan(data):
             "total_miles": _round1(log.total_miles),
             "days": log.days,
             "cycle_after_min": log.cycle_after_min,
-            "available_tomorrow_min": max(0, CYCLE_LIMIT_MIN - log.cycle_after_min),
+            "available_tomorrow_min": round(log.hours_available_tomorrow * 60),
             "restart_needed": log.cycle_after_min >= CYCLE_LIMIT_MIN,
         },
         "waypoints": [

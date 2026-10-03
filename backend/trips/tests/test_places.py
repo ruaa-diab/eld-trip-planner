@@ -8,7 +8,12 @@ from rest_framework.test import APIClient
 from trips.services import routing
 from trips.services.planner import same_location_notices
 from trips.services.regions import typed_region
-from trips.services.routing import AddressNotFound, OutsideUSInput, StateMismatch, geocode
+from trips.services.routing import (
+    AddressNotFound,
+    OutsideUSInput,
+    StateMismatch,
+    geocode,
+)
 from trips.tests.test_api import FakeORS, ok, payload
 
 

@@ -150,7 +150,7 @@ def build_logs(events, names, legs, cycle_used_hours, trip_start):
             if p.status in WORK_STATUSES:
                 a += t - s
             if p.type == "restart_34" and p.end <= day_end:
-                a = 0       # option (a): A resets when the restart ends
+                a = 0       # A resets when the restart ends, not when it starts
 
         if not sheet.remarks:
             p = today[0]

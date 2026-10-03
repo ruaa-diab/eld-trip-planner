@@ -18,7 +18,7 @@ const ZIP_RE = /^\d{5}(-\d{4})?$/
  * Same rule as the API: a US ZIP (60632 or 60632-1234), or at least 3 characters with at
  * least one letter (never geocode "C" or "123").
  */
-export const isUsableLocation = (text) =>
+const isUsableLocation = (text) =>
   ZIP_RE.test(text.trim()) || (text.trim().length >= 3 && /\p{L}/u.test(text))
 
 function initialValues() {

@@ -7,8 +7,16 @@ from django.test import SimpleTestCase, override_settings
 
 from trips.services import routing
 from trips.services.routing import (
-    AddressNotFound, ApiKeyError, InvalidPlace, NoRouteFound, QuotaExceeded, RoutingError,
-    ServiceUnavailable, geocode, get_route, is_zip,
+    AddressNotFound,
+    ApiKeyError,
+    InvalidPlace,
+    NoRouteFound,
+    QuotaExceeded,
+    RoutingError,
+    ServiceUnavailable,
+    geocode,
+    get_route,
+    is_zip,
 )
 
 CHICAGO = (41.88, -87.63, "Chicago, IL")
@@ -325,7 +333,6 @@ class GetRouteTest(SimpleTestCase):
         self.assertEqual(first.distance_miles, 0.5)
         self.assertEqual(first.duration_min, 1.5)
         self.assertEqual(route.steps[1][0].instruction, "Turn left onto I-80 W")
-        self.assertEqual(route.waypoints, [CHICAGO, ROCKFORD, DENVER])
         self.assertEqual(route.leg_bounds, [0, 2, 4])
 
     def test_zero_length_segment_without_distance_or_duration(self, req):

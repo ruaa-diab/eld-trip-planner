@@ -1,4 +1,4 @@
-/* ── Page intro ── */
+/* Page intro */
 
 .form__intro {
   margin-bottom: 26px;
@@ -20,7 +20,7 @@
   text-wrap: pretty;
 }
 
-/* ── Layout: form card + rules panel ── */
+/* Layout: form card + rules panel */
 
 .form__layout {
   display: flex;
@@ -46,7 +46,7 @@
   margin: 28px 0 0;
 }
 
-/* ── General error ── */
+/* General error */
 
 .form__alert {
   display: flex;
@@ -73,7 +73,7 @@
   font-size: 15px;
 }
 
-/* ── Route ── */
+/* Route */
 
 .route {
   position: relative;
@@ -109,7 +109,7 @@
   padding-top: 36px;
 }
 
-/* ── Cycle ── */
+/* Cycle */
 
 .cycle__label {
   margin-bottom: 2px;
@@ -198,7 +198,7 @@
   color: var(--warn-text);
 }
 
-/* ── Start date/time ── */
+/* Start date/time */
 
 .start {
   margin-top: 22px;
@@ -214,7 +214,7 @@
   padding: 2px 12px 0;
 }
 
-/* ── Driver & carrier details ── */
+/* Driver & carrier details */
 
 .details__toggle {
   width: 100%;
@@ -287,7 +287,7 @@
   font-size: 15px;
 }
 
-/* ── Submit ── */
+/* Submit */
 
 .form__actions {
   display: flex;
@@ -321,7 +321,7 @@
   margin-top: -3px;
 }
 
-/* ── Planning rules ── */
+/* Planning rules */
 
 .rules {
   flex: 1 1 300px;
@@ -399,7 +399,7 @@
   }
 }
 
-/* ── Address suggestions (design: dropdown under the field) ── */
+/* Address suggestions (design: dropdown under the field) */
 
 .suggest {
   position: relative;
@@ -449,7 +449,7 @@
   color: var(--text-muted);
 }
 
-/* ── Location hint and "Use my current location" ── */
+/* Location hint and "Use my current location" */
 
 .route__field {
   position: relative;

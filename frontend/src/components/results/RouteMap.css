@@ -23,7 +23,7 @@
   filter: invert(1) hue-rotate(190deg) brightness(0.78) contrast(0.92) saturate(0.35);
 }
 
-/* ── Markers ── */
+/* Markers */
 
 .map-marker {
   background: none;
@@ -40,7 +40,7 @@
   filter: drop-shadow(0 0 6px rgba(245, 165, 36, 0.9));
 }
 
-/* ── Popups ── */
+/* Popups */
 
 .route-map .leaflet-popup-content-wrapper,
 .route-map .leaflet-popup-tip {
@@ -98,7 +98,7 @@
   font-weight: 700;
 }
 
-/* ── Controls and attribution ── */
+/* Controls and attribution */
 
 .route-map .leaflet-bar a {
   background: var(--surface);
@@ -119,7 +119,7 @@
   color: var(--accent);
 }
 
-/* ── Legend ── */
+/* Legend */
 
 .map-legend {
   display: flex;

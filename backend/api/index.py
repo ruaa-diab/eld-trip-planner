@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Ensure the backend project root (where config/ and trips/ live) is importable.

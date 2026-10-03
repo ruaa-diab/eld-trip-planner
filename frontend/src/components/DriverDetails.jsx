@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 // [API key, label, placeholder]
-export const DETAIL_FIELDS = [
+const DETAIL_FIELDS = [
   ['driver_name', 'Driver name', 'Full name'],
   ['driver_number', 'Driver number', 'License or employee no.'],
   ['co_driver_name', 'Co-driver', 'None'],

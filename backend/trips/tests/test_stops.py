@@ -25,7 +25,6 @@ def straight_route(leg0_miles=DEG, leg1_miles=2 * DEG, bounds=(0, 1, 3)):
               Leg(ROCKFORD[2], DENVER[2], leg1_miles, 2.0)],
         geometry=[[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [3.0, 0.0]],
         steps=[[], []],
-        waypoints=[CHICAGO, ROCKFORD, DENVER],
         leg_bounds=list(bounds),
     )
 

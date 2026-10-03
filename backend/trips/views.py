@@ -7,8 +7,14 @@ from trips.serializers import CoordsSerializer, PlanTripSerializer
 from trips.services import planner
 from trips.services.autocomplete import suggest
 from trips.services.routing import (
-    ApiKeyError, NoAddress, NoRouteFound, OutsideUS, QuotaExceeded, RoutingError,
-    ServiceUnavailable, reverse_address,
+    ApiKeyError,
+    NoAddress,
+    NoRouteFound,
+    OutsideUS,
+    QuotaExceeded,
+    RoutingError,
+    ServiceUnavailable,
+    reverse_address,
 )
 
 logger = logging.getLogger(__name__)

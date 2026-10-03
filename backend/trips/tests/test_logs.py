@@ -216,4 +216,4 @@ class AllApprovedCasesTest(SimpleTestCase):
                     self.assertTrue(d.remarks)
             with self.subTest(case=name, check="miles"):
                 self.assertAlmostEqual(log.total_miles,
-                                       sum(l.distance_miles for l in legs), places=6)
+                                       sum(leg.distance_miles for leg in legs), places=6)

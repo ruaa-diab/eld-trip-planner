@@ -42,7 +42,7 @@ export const formatMiles = (mi) => Math.round(mi).toLocaleString('en-US')
 
 export const isBlank = (v) => v == null || String(v).trim() === ''
 
-/** Optional log-sheet fields: show a muted "—" when empty, never a blank line or an invented value. */
+/** Optional log-sheet fields: a muted "—" when empty. */
 export const orDash = (v) => (isBlank(v) ? '—' : String(v).trim())
 
 /** Note after a location name when it was matched as an area, not an exact point. */
