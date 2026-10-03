@@ -27,44 +27,46 @@ export default function StatSigns({ summary, sheets }) {
   const cyclePct = Math.min(100, (summary.cycle_after_min / CYCLE_LIMIT_MIN) * 100)
 
   return (
-    <div className="signs">
-      <Sign title="Total miles" sub={<div className="sign__sub">{formatDuration(drivingMin)} driving</div>}>
-        {formatMiles(summary.total_miles)}
-      </Sign>
-
-      <Sign title="Days" sub={<div className="sign__sub">{range}</div>}>
-        {summary.days}
-      </Sign>
-
-      <Sign
-        title="Cycle used after"
-        sub={
-          <div className="sign__bar" role="presentation">
-            <div className="sign__fill" style={{ width: `${cyclePct}%` }} />
-          </div>
-        }
-      >
-        {formatHM(summary.cycle_after_min)}
-        <span className="sign__of"> / 70 h</span>
-      </Sign>
-
-      {summary.restart_needed ? (
-        <Sign title="Hours tomorrow" danger sub={<div className="sign__sub sign__sub--danger">34-hour restart needed</div>}>
-          0:00
+    <div className="signs-area">
+      <div className="signs">
+        <Sign title="Total miles" sub={<div className="sign__sub">{formatDuration(drivingMin)} driving</div>}>
+          {formatMiles(summary.total_miles)}
         </Sign>
-      ) : (
+
+        <Sign title="Days" sub={<div className="sign__sub">{range}</div>}>
+          {summary.days}
+        </Sign>
+
         <Sign
-          title="Hours tomorrow"
-          accent
+          title="Cycle used after"
           sub={
-            <div className="sign__sub">
-              70:00 − {formatHM(summary.cycle_after_min)} • {tomorrow}
+            <div className="sign__bar" role="presentation">
+              <div className="sign__fill" style={{ width: `${cyclePct}%` }} />
             </div>
           }
         >
-          {formatHM(summary.available_tomorrow_min)}
+          {formatHM(summary.cycle_after_min)}
+          <span className="sign__of"> / 70 h</span>
         </Sign>
-      )}
+
+        {summary.restart_needed ? (
+          <Sign title="Hours tomorrow" danger sub={<div className="sign__sub sign__sub--danger">34-hour restart needed</div>}>
+            0:00
+          </Sign>
+        ) : (
+          <Sign
+            title="Hours tomorrow"
+            accent
+            sub={
+              <div className="sign__sub">
+                70:00 − {formatHM(summary.cycle_after_min)} • {tomorrow}
+              </div>
+            }
+          >
+            {formatHM(summary.available_tomorrow_min)}
+          </Sign>
+        )}
+      </div>
     </div>
   )
 }

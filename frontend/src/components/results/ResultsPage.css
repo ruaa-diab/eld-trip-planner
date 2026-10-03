@@ -91,11 +91,23 @@
 
 /* ── Mile-marker stat signs ── */
 
+/* Four signs in one row when they fit, otherwise 2 x 2 (never 3 + 1). Sized by the
+   space the results column actually has, not the window. */
+.signs-area {
+  container-type: inline-size;
+}
+
 .signs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--stat-gap);
   margin-bottom: 28px;
+}
+
+@container (min-width: 860px) {
+  .signs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 .sign {
