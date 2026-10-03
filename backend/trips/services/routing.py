@@ -73,7 +73,22 @@ class InvalidPlace(AddressNotFound):
 
 
 class NoRouteFound(RoutingError):
-    pass
+    def __init__(self, message, code=None, detail=""):
+        super().__init__(message)
+        self.code = code          # ORS error code, e.g. 2009 or 2010
+        self.detail = detail      # ORS's own message
+
+
+class UnroutablePoint(NoRouteFound):
+    """No road near one trip location. .point_index: 0 current, 1 pickup, 2 dropoff."""
+
+    def __init__(self, point_index):
+        super().__init__("No road could be found near one of these locations.", code=2010)
+        self.point_index = point_index
+
+
+# ORS 2010: "Could not find routable point within a radius of 5000.0 meters of specified coordinate 1: ..."
+_UNROUTABLE_COORDINATE = re.compile(r"specified coordinate (\d+)")
 
 
 class ApiKeyError(RoutingError):
@@ -151,7 +166,7 @@ def request_json(method, path, timeout=TIMEOUT_SECONDS, **kwargs):
     if resp.status_code == 429:
         raise QuotaExceeded("The routing service quota is used up. Try again later.")
     if code in NO_ROUTE_MESSAGES:
-        raise NoRouteFound(NO_ROUTE_MESSAGES[code])
+        raise NoRouteFound(NO_ROUTE_MESSAGES[code], code=code, detail=message)
     if resp.status_code == 404:
         raise NoRouteFound("No route could be found between these locations.")
     if resp.status_code >= 500:
@@ -299,8 +314,19 @@ def get_route(current, pickup, dropoff):
     same Route a single request produced.
     """
     points = [current, pickup, dropoff]
+    def leg(index):
+        try:
+            return _route_leg(points[index], points[index + 1])
+        except NoRouteFound as e:
+            # Name the location ORS couldn't reach: its coordinate number in this leg's
+            # request (0 = leg start, 1 = leg end) plus the leg's offset in the trip.
+            match = _UNROUTABLE_COORDINATE.search(e.detail) if e.code == 2010 else None
+            if match and int(match.group(1)) in (0, 1):
+                raise UnroutablePoint(index + int(match.group(1))) from e
+            raise
+
     with ThreadPoolExecutor(max_workers=2) as pool:
-        (seg0, coords0), (seg1, coords1) = pool.map(lambda ab: _route_leg(*ab), [(current, pickup), (pickup, dropoff)])
+        (seg0, coords0), (seg1, coords1) = pool.map(leg, [0, 1])
 
     # Join the geometries at the pickup; drop leg 2's first point when it repeats leg 1's last.
     if coords1[0] == coords0[-1]:

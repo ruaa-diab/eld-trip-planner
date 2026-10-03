@@ -71,13 +71,15 @@ function errorsFromApi(err, values) {
     const fieldErrors = {}
     for (const field of err.fields) {
       const text = values[field].trim()
-      fieldErrors[field] = {
+      fieldErrors[field] = err.messages?.[field] || {
         invalid_place: 'Enter a proper city or address',
         outside_us: 'That location is outside the US. Enter a US address.',
         state_mismatch: `Couldn't find '${text}'. Check the city and state.`,
       }[err.reasons?.[field]] || `Couldn't find '${text}'. Check the spelling.`
     }
-    return { fieldErrors, generalError: null }
+    // A location that was found but has no truck road nearby also gets a banner.
+    const noRoad = Object.values(err.reasons || {}).includes('no_road')
+    return { fieldErrors, generalError: noRoad ? 'Check the highlighted location.' : null }
   }
   if (err.code === 'invalid_input' && err.fields && typeof err.fields === 'object') {
     const fieldErrors = {}

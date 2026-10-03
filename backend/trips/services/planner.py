@@ -7,7 +7,7 @@ from trips.hos.engine import plan_trip
 from trips.hos.validator import validate_trip
 from trips.services.logs import CYCLE_LIMIT_MIN, build_logs
 from trips.services.routing import (
-    AddressNotFound, InvalidPlace, OutsideUSInput, StateMismatch, geocode_place, get_route,
+    AddressNotFound, InvalidPlace, OutsideUSInput, StateMismatch, UnroutablePoint, geocode_place, get_route,
 )
 from trips.services.stops import haversine_miles, locate, name_stops
 
@@ -21,6 +21,13 @@ FIELD_LABELS = {
 }
 MAX_GEOMETRY_POINTS = 1500
 SAME_PLACE_MILES = 0.1      # resolved points this close count as the same location
+
+
+def no_road_message(label, precision):
+    """Message for a location found by the geocoder but too far from any truck road."""
+    if precision == "county":
+        return f"No road near {label}. Please be more specific: enter a city or address in the county."
+    return f"No road near {label}. Please be more specific: try a nearby address."
 
 
 def same_location_notices(places):
@@ -42,13 +49,17 @@ class AddressesNotFound(Exception):
 
     .fields lists them in form order; .reasons maps each to "not_found" (no confident match),
     "invalid_place" (the match is a state, country, ZIP area, ...), "outside_us" (a non-US
-    region was typed) or "state_mismatch" (no match in the state that was typed).
+    region was typed), "state_mismatch" (no match in the state that was typed) or "no_road"
+    (the location was found but no truck road is near it). .messages holds ready-made
+    per-field messages where the form should show them as given (no_road).
     """
 
-    def __init__(self, reasons, texts):
+    def __init__(self, reasons, texts, field_messages=None):
         self.fields = list(reasons)
         self.reasons = reasons
+        self.messages = field_messages or {}
         messages = {
+            "no_road": lambda f: f"{FIELD_LABELS[f]}: {self.messages[f]}",
             "invalid_place": lambda f: f"{FIELD_LABELS[f]}: Enter a proper city or address",
             "outside_us": lambda f: f"{FIELD_LABELS[f]}: That location is outside the US. Enter a US address.",
             "state_mismatch": lambda f: f"{FIELD_LABELS[f]}: Couldn't find '{texts[f]}'. Check the city and state.",
@@ -114,7 +125,12 @@ def plan(data):
     """Plan a trip from validated request data. Returns the response body as a dict."""
     places = _geocode_all(data)
     points = [p[:3] for p in places]
-    route = get_route(*points)
+    try:
+        route = get_route(*points)
+    except UnroutablePoint as e:
+        field = LOCATION_FIELDS[e.point_index]
+        _, _, label, precision = places[e.point_index]
+        raise AddressesNotFound({field: "no_road"}, data, {field: no_road_message(label, precision)}) from e
     cycle_used = data["current_cycle_used"]
     start = data["start_time"]
 

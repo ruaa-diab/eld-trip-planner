@@ -67,7 +67,8 @@ def plan_trip(request):
     try:
         return Response(planner.plan(serializer.validated_data))
     except planner.AddressesNotFound as e:
-        return error_response(400, "address_not_found", str(e), fields=e.fields, reasons=e.reasons)
+        extra = {"messages": e.messages} if e.messages else {}
+        return error_response(400, "address_not_found", str(e), fields=e.fields, reasons=e.reasons, **extra)
     except NoRouteFound as e:
         return error_response(422, "no_route", str(e))
     except ApiKeyError as e:
