@@ -95,8 +95,10 @@ Repeat until dropoff is done.
 - Driver starts the trip on a fresh shift (just had 10 hours off).
 - Trip is exactly current → pickup → dropoff. No extra stops. New stop = new trip.
 - Cycle used is typed by the driver each time (he knows it from his logbook/ELD).
-- Time zone: whole trip uses the current location's time zone as "home terminal" time
-  (FMCSA: logs use home terminal time even when crossing zones). Print it on the sheets.
+- Time zone: times are in home terminal time exactly as the driver enters them; the app does
+  no time zone conversion. The form tells the driver to enter the start time in home terminal
+  time, and each log sheet shows "Times in home terminal time".
+  (FMCSA: logs use home terminal time even when crossing zones.)
 - Status choices: 30-min break = off duty; 10-hour rest = sleeper berth;
   34-hour restart = off duty; fuel/pickup/dropoff = on duty.
 - Drive times from the TRUCK profile (OpenRouteService driving-hgv), not car.
