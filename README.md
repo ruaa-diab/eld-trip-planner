@@ -23,6 +23,10 @@ The results page shows:
 
 When something can't be planned, the app says exactly what and where: the message appears under the field it's about, names the place, and says how to fix it ("No road near Los Angeles County, CA. Please be more specific: enter a city or address in the county."). It never guesses a location the user didn't mean.
 
+## Design
+
+I designed the screens before building them, around a "highway at night" theme: a navy background, amber dashed lane lines as dividers, section headers styled like highway signs, trip stats on mile-marker posts, and route-shield markers on the map. Red is reserved for "stop" signals only (the 34-hour restart, errors, "restart needed"), like tail lights, so it stands out when it appears. Each duty status has its own color, used the same way on the map, the timeline and the log grid, and the off-duty line is darker on the paper sheet so a full rest day never blends into the grid. The log sheet follows the layout and wording of the FMCSA paper form, so anyone who has filled one in recognizes it. The layout works down to phone width, where the log grid scrolls sideways.
+
 ## How it works
 
 ```mermaid
