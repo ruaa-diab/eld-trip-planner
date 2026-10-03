@@ -7,6 +7,7 @@ The API key goes in the Authorization header.
 """
 
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 import requests
@@ -264,19 +265,17 @@ def short_label(label):
     return label[:-len(", USA")] if label.endswith(", USA") else label
 
 
-def get_route(current, pickup, dropoff):
-    """Route current → pickup → dropoff. Each point is a (lat, lon, label) tuple."""
-    points = [current, pickup, dropoff]
+def _route_leg(a, b):
+    """One leg a → b: (segment, [lon, lat] coordinates). Each point is (lat, lon, label)."""
     data = request_json("POST", DIRECTIONS_PATH, json={
-        "coordinates": [[lon, lat] for lat, lon, _ in points],
+        "coordinates": [[a[1], a[0]], [b[1], b[0]]],
         "units": "mi",
         "instructions": True,
         # Let each point snap to a road up to 5 km away (ORS default: 350 m). A city's
         # center point can be far from any road, e.g. Corpus Christi, TX is ~2.4 km out
         # in the bay. Kept finite so a point far out at sea still fails instead of guessing.
-        "radiuses": [SNAP_RADIUS_METERS] * len(points),
+        "radiuses": [SNAP_RADIUS_METERS, SNAP_RADIUS_METERS],
     })
-
     try:
         feature = data["features"][0]
         segments = feature["properties"]["segments"]
@@ -284,10 +283,31 @@ def get_route(current, pickup, dropoff):
         way_points = list(feature["properties"]["way_points"])
     except (KeyError, IndexError, TypeError):
         raise RoutingError("The routing service returned an unexpected response.")
-    if len(segments) != 2:
-        raise RoutingError(f"Expected 2 route legs, got {len(segments)}.")
-    if len(way_points) != 3:
+    if len(segments) != 1:
+        raise RoutingError(f"Expected 1 route segment per leg, got {len(segments)}.")
+    if len(way_points) != 2 or not coords:
         raise RoutingError("The routing service returned an unexpected response.")
+    return segments[0], coords
+
+
+def get_route(current, pickup, dropoff):
+    """Route current → pickup → dropoff. Each point is a (lat, lon, label) tuple.
+
+    Each leg is its own request (sent in parallel): ORS limits the distance of a single
+    request, so a long trip (e.g. Columbus → Los Angeles → Pennsylvania, ~4,700 mi) fails
+    as one request even when each leg is within the limit. The legs are combined into the
+    same Route a single request produced.
+    """
+    points = [current, pickup, dropoff]
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        (seg0, coords0), (seg1, coords1) = pool.map(lambda ab: _route_leg(*ab), [(current, pickup), (pickup, dropoff)])
+
+    # Join the geometries at the pickup; drop leg 2's first point when it repeats leg 1's last.
+    if coords1[0] == coords0[-1]:
+        coords1 = coords1[1:]
+    coords = coords0 + coords1
+    leg_bounds = [0, len(coords0) - 1, len(coords) - 1]
+    segments = [seg0, seg1]
 
     # ORS omits distance/duration when they are 0 (e.g. pickup at the current location).
     legs = [
@@ -313,4 +333,4 @@ def get_route(current, pickup, dropoff):
     ]
     geometry = [[c[1], c[0]] for c in coords]
     return Route(legs=legs, geometry=geometry, steps=steps,
-                 waypoints=list(points), leg_bounds=way_points)
+                 waypoints=list(points), leg_bounds=leg_bounds)

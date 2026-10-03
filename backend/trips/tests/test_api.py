@@ -8,6 +8,7 @@ from django.test import SimpleTestCase, override_settings
 from rest_framework.test import APIClient
 
 from trips.services import routing
+from trips.tests.test_routing import leg_of
 
 KEY = "secret-test-key-123"
 URL = "/api/plan-trip"
@@ -82,6 +83,10 @@ class FakeORS:
         if url.endswith("/pelias/v1/reverse"):
             return ok({"features": [{"properties": {"county": "Test County", "region_a": "IA"}}]})
         if "/directions/" in url:
+            # get_route() asks for one leg per request: answer with that leg of a 2-leg body.
+            body = self.directions.json.return_value
+            if isinstance(body, dict) and len(body.get("features", [{}])[0].get("properties", {}).get("segments", [])) == 2:
+                return ok(leg_of(body, kwargs["json"]))
             return self.directions
         raise AssertionError(f"unexpected URL {url}")
 

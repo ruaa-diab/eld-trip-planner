@@ -59,6 +59,34 @@ ROUTE_BODY = {"type": "FeatureCollection", "features": [{
 }]}
 
 
+def leg_of(body, request_json):
+    """From a 2-leg ORS body, the single-leg body for the leg a request asks for.
+
+    get_route() requests each leg separately (in parallel, so in any order); the leg is
+    picked by matching the request's start and end points to the body's leg ends.
+    """
+    feature = body["features"][0]
+    coords = feature["geometry"]["coordinates"]
+    wp = feature["properties"]["way_points"]
+    (sx, sy), (ex, ey) = request_json["coordinates"]
+
+    def dist(c, x, y):
+        return (c[0] - x) ** 2 + (c[1] - y) ** 2
+
+    k = min((0, 1), key=lambda i: dist(coords[wp[i]], sx, sy) + dist(coords[wp[i + 1]], ex, ey))
+    return {"type": "FeatureCollection", "features": [{
+        "geometry": {"type": "LineString", "coordinates": coords[wp[k]:wp[k + 1] + 1]},
+        "properties": {"way_points": [0, wp[k + 1] - wp[k]], "segments": [feature["properties"]["segments"][k]]},
+    }]}
+
+
+def per_leg(body):
+    """Mock side_effect answering each leg request with its part of a 2-leg body."""
+    def answer(method, url, json, **kwargs):
+        return response(body=leg_of(body, json))
+    return answer
+
+
 @override_settings(ORS_API_KEY="test-key")
 @mock.patch.object(routing.requests, "request")
 class GeocodeTest(SimpleTestCase):
@@ -210,25 +238,72 @@ class GetRouteTest(SimpleTestCase):
 
     def test_points_may_snap_to_roads_up_to_5_km_away(self, req):
         # ORS's default 350 m radius fails for city centers far from a road
-        # (live: Corpus Christi, TX is ~2.4 km out in the bay).
-        req.return_value = response(body=ROUTE_BODY)
+        # (live: Corpus Christi, TX is ~2.4 km out in the bay). Every leg request has it.
+        req.side_effect = per_leg(ROUTE_BODY)
         get_route(CHICAGO, ROCKFORD, DENVER)
-        body = req.call_args.kwargs["json"]
-        self.assertEqual(body["radiuses"], [5000, 5000, 5000])
-        self.assertEqual(len(body["radiuses"]), len(body["coordinates"]))
+        self.assertEqual(req.call_count, 2)
+        for call in req.call_args_list:
+            body = call.kwargs["json"]
+            self.assertEqual(body["radiuses"], [5000, 5000])
+            self.assertEqual(len(body["radiuses"]), len(body["coordinates"]))
+
+    def test_each_leg_is_its_own_request(self, req):
+        # One request for the whole trip fails over ORS's distance limit
+        # (live: Columbus, OH -> Los Angeles, CA -> Bradford County, PA, ~4,900 mi).
+        req.side_effect = per_leg(ROUTE_BODY)
+        get_route(CHICAGO, ROCKFORD, DENVER)
+        requested = sorted(call.kwargs["json"]["coordinates"] for call in req.call_args_list)
+        self.assertEqual(requested, sorted([
+            [[-87.63, 41.88], [-89.09, 42.27]],      # current -> pickup
+            [[-89.09, 42.27], [-104.99, 39.74]],     # pickup -> dropoff
+        ]))
+
+    def test_too_long_only_when_a_single_leg_exceeds_the_limit(self, req):
+        too_long = response(400, {"error": {"code": 2004, "message": "Request parameters exceed limits"}})
+        legs_ok = per_leg(ROUTE_BODY)
+
+        def second_leg_too_long(method, url, json, **kwargs):
+            return too_long if json["coordinates"][0] == [-89.09, 42.27] else legs_ok(method, url, json)
+
+        req.side_effect = second_leg_too_long
+        with self.assertRaisesRegex(NoRouteFound, "too long"):
+            get_route(CHICAGO, ROCKFORD, DENVER)
+
+    def test_geometry_joins_at_the_pickup(self, req):
+        # Leg 2 starts where leg 1 ended: the shared point appears once.
+        req.side_effect = per_leg(ROUTE_BODY)
+        route = get_route(CHICAGO, ROCKFORD, DENVER)
+        self.assertEqual(route.geometry.count([42.27, -89.09]), 1)
+        self.assertEqual(route.geometry[route.leg_bounds[1]], [42.27, -89.09])
+
+        # If the legs snap to slightly different road points, both are kept and leg 2's
+        # slice starts at leg 1's end, so the legs still meet.
+        leg1 = leg_of(ROUTE_BODY, {"coordinates": [[-87.63, 41.88], [-89.09, 42.27]]})
+        leg2 = leg_of(ROUTE_BODY, {"coordinates": [[-89.09, 42.27], [-104.99, 39.74]]})
+        leg2["features"][0]["geometry"]["coordinates"][0] = [-89.0901, 42.2701]
+
+        def answer(method, url, json, **kwargs):
+            return response(body=leg1 if json["coordinates"][0] == [-87.63, 41.88] else leg2)
+
+        req.side_effect = answer
+        route = get_route(CHICAGO, ROCKFORD, DENVER)
+        self.assertEqual(len(route.geometry), 6)
+        self.assertEqual(route.leg_bounds, [0, 2, 5])
+        self.assertEqual(route.geometry[3], [42.2701, -89.0901])
 
     def test_builds_two_legs_geometry_and_steps(self, req):
-        req.return_value = response(body=ROUTE_BODY)
+        req.side_effect = per_leg(ROUTE_BODY)
         route = get_route(CHICAGO, ROCKFORD, DENVER)
 
-        method, url = req.call_args.args
+        first = next(c for c in req.call_args_list if c.kwargs["json"]["coordinates"][0] == [-87.63, 41.88])
+        method, url = first.args
         self.assertEqual(method, "POST")
         self.assertEqual(url, "https://api.heigit.org/openrouteservice/v2/directions/driving-hgv/geojson")
-        self.assertEqual(req.call_args.kwargs["json"], {
-            "coordinates": [[-87.63, 41.88], [-89.09, 42.27], [-104.99, 39.74]],
+        self.assertEqual(first.kwargs["json"], {
+            "coordinates": [[-87.63, 41.88], [-89.09, 42.27]],
             "units": "mi",
             "instructions": True,
-            "radiuses": [5000, 5000, 5000],
+            "radiuses": [5000, 5000],
         })
 
         leg0, leg1 = route.legs
@@ -261,7 +336,7 @@ class GetRouteTest(SimpleTestCase):
                 {"distance": 1000.0, "duration": 57600.0, "steps": []},
             ]},
         }]}
-        req.return_value = response(body=body)
+        req.side_effect = per_leg(body)
         leg0, leg1 = get_route(CHICAGO, CHICAGO, DENVER).legs
         self.assertEqual((leg0.distance_miles, leg0.drive_hours), (0.0, 0.0))
         self.assertEqual((leg1.distance_miles, leg1.drive_hours), (1000.0, 16.0))
@@ -296,10 +371,11 @@ class GetRouteTest(SimpleTestCase):
             get_route(CHICAGO, ROCKFORD, DENVER)
 
     def test_wrong_segment_count_raises(self, req):
-        body = {"features": [{"geometry": {"coordinates": []},
-                              "properties": {"way_points": [0, 0], "segments": [{"distance": 1, "duration": 1}]}}]}
+        # Each leg request must come back as exactly one segment.
+        body = {"features": [{"geometry": {"coordinates": [[0, 0], [1, 1]]},
+                              "properties": {"way_points": [0, 1], "segments": [{"distance": 1}, {"distance": 1}]}}]}
         req.return_value = response(body=body)
-        with self.assertRaisesRegex(RoutingError, "Expected 2 route legs, got 1"):
+        with self.assertRaisesRegex(RoutingError, "Expected 1 route segment per leg, got 2"):
             get_route(CHICAGO, ROCKFORD, DENVER)
 
     def test_malformed_response_raises(self, req):
