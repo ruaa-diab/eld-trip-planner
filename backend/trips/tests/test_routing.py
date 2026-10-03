@@ -25,10 +25,16 @@ def response(status=200, body=None, text=""):
     return resp
 
 
+def state_of(label):
+    """Pelias region_a for a fake result: the last part of "City, ST[, USA]"."""
+    parts = [p.strip() for p in label.split(",") if p.strip() and p.strip() != "USA"]
+    return parts[-1] if len(parts) > 1 else None
+
+
 def geocode_body(*features):
     return {"type": "FeatureCollection", "features": [
         {"geometry": {"type": "Point", "coordinates": [lon, lat]},
-         "properties": {"label": label, "layer": "locality", "confidence": 1}}
+         "properties": {"label": label, "layer": "locality", "confidence": 1, "region_a": state_of(label)}}
         for lat, lon, label in features
     ]}
 
@@ -102,7 +108,7 @@ class GeocodeTest(SimpleTestCase):
 def pelias(layer, confidence=1, label="Somewhere, IL, USA"):
     return response(body={"features": [{
         "geometry": {"type": "Point", "coordinates": [-89.0, 42.0]},
-        "properties": {"label": label, "layer": layer, "confidence": confidence},
+        "properties": {"label": label, "layer": layer, "confidence": confidence, "region_a": state_of(label)},
     }]})
 
 

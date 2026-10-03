@@ -6,8 +6,10 @@ from concurrent.futures import ThreadPoolExecutor
 from trips.hos.engine import plan_trip
 from trips.hos.validator import validate_trip
 from trips.services.logs import CYCLE_LIMIT_MIN, build_logs
-from trips.services.routing import AddressNotFound, InvalidPlace, geocode_place, get_route
-from trips.services.stops import locate, name_stops
+from trips.services.routing import (
+    AddressNotFound, InvalidPlace, OutsideUSInput, StateMismatch, geocode_place, get_route,
+)
+from trips.services.stops import haversine_miles, locate, name_stops
 
 logger = logging.getLogger(__name__)
 
@@ -18,23 +20,41 @@ FIELD_LABELS = {
     "dropoff_location": "Dropoff location",
 }
 MAX_GEOMETRY_POINTS = 1500
+SAME_PLACE_MILES = 0.1      # resolved points this close count as the same location
+
+
+def same_location_notices(places):
+    """Notices for repeated locations, from resolved coordinates (never the typed text).
+
+    Current = pickup or current = dropoff is normal (the truck is already there): no notice.
+    """
+    current, pickup, dropoff = [p[:2] for p in places]
+    pickup_is_dropoff = haversine_miles(pickup, dropoff) <= SAME_PLACE_MILES
+    if pickup_is_dropoff and haversine_miles(current, pickup) <= SAME_PLACE_MILES:
+        return ["All three locations are the same; no driving is needed."]
+    if pickup_is_dropoff:
+        return ["Pickup and dropoff are the same location."]
+    return []
 
 
 class AddressesNotFound(Exception):
     """One or more locations could not be used.
 
-    .fields lists them in form order; .reasons maps each to "not_found" (no confident match)
-    or "invalid_place" (the match is a state, country, ZIP area, ...).
+    .fields lists them in form order; .reasons maps each to "not_found" (no confident match),
+    "invalid_place" (the match is a state, country, ZIP area, ...), "outside_us" (a non-US
+    region was typed) or "state_mismatch" (no match in the state that was typed).
     """
 
     def __init__(self, reasons, texts):
         self.fields = list(reasons)
         self.reasons = reasons
-        super().__init__("; ".join(
-            f"{FIELD_LABELS[f]}: Enter a proper city or address" if r == "invalid_place"
-            else f"{FIELD_LABELS[f]} not found: {texts[f]}"
-            for f, r in reasons.items()
-        ))
+        messages = {
+            "invalid_place": lambda f: f"{FIELD_LABELS[f]}: Enter a proper city or address",
+            "outside_us": lambda f: f"{FIELD_LABELS[f]}: That location is outside the US. Enter a US address.",
+            "state_mismatch": lambda f: f"{FIELD_LABELS[f]}: Couldn't find '{texts[f]}'. Check the city and state.",
+            "not_found": lambda f: f"{FIELD_LABELS[f]} not found: {texts[f]}",
+        }
+        super().__init__("; ".join(messages[r](f) for f, r in reasons.items()))
 
 
 class IllegalPlan(Exception):
@@ -56,6 +76,10 @@ def _geocode_all(data):
             return geocode_place(data[field])
         except InvalidPlace:
             return "invalid_place"
+        except OutsideUSInput:
+            return "outside_us"
+        except StateMismatch:
+            return "state_mismatch"
         except AddressNotFound:
             return "not_found"
 
@@ -169,5 +193,6 @@ def plan(data):
             }
             for sheet in log.sheets
         ],
+        "notices": same_location_notices(places),
         "details": data["details"],
     }

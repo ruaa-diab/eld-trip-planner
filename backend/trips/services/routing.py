@@ -13,6 +13,7 @@ import requests
 from django.conf import settings
 
 from trips.hos.engine import Leg
+from trips.services.regions import typed_region
 
 ORS_BASE_URL = "https://api.heigit.org"
 GEOCODE_PATH = "/pelias/v1/search"
@@ -55,6 +56,14 @@ class OutsideUS(RoutingError):
 
 class NoAddress(RoutingError):
     pass
+
+
+class OutsideUSInput(AddressNotFound):
+    """The user typed a non-US region ("Toronto, ON")."""
+
+
+class StateMismatch(AddressNotFound):
+    """The match is not in the state the user typed (never swap "ON" for "OH")."""
 
 
 class InvalidPlace(AddressNotFound):
@@ -168,6 +177,14 @@ def geocode_place(text):
     if is_zip(text):
         return _geocode_zip(text)
 
+    # Never swap the state the user typed: Pelias, limited to the US, turns "Toronto, ON"
+    # into Toronto, OH. Reject non-US regions up front and check US states after the match.
+    region = typed_region(text)
+    if region and region[0] == "non_us":
+        raise OutsideUSInput("That location is outside the US. Enter a US address.")
+    if region and region[0] == "unknown_code":
+        raise StateMismatch(f"Couldn't find '{text}'. Check the city and state.")
+
     data = request_json("GET", GEOCODE_PATH, params={
         "text": text,
         "size": 1,
@@ -183,6 +200,8 @@ def geocode_place(text):
     confidence = props.get("confidence")
     if confidence is not None and confidence < MIN_CONFIDENCE:
         raise AddressNotFound(f"Address not found: {text}")
+    if region and (props.get("region_a") or "").upper() != region[1]:
+        raise StateMismatch(f"Couldn't find '{text}'. Check the city and state.")
     if props.get("layer") not in ACCEPTED_LAYERS:
         raise InvalidPlace("Enter a proper city or address")
 

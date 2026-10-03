@@ -61,6 +61,11 @@ export default function ResultsPage({ plan, departure, onEdit, onOpenLogs }) {
               <PlaceName place={from} /> → <PlaceName place={to} />
             </h1>
             <Subtitle plan={plan} />
+            {plan.notices?.map((notice) => (
+              <div className="results__notice" role="note" key={notice}>
+                {notice}
+              </div>
+            ))}
           </div>
           <div className="results__actions">
             <button type="button" className="btn btn--ghost" onClick={onEdit}>

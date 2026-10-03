@@ -77,12 +77,19 @@ class FakeORS:
                 return ok({"features": []})
             lat, lon = PLACES[text]
             return ok({"features": [{"geometry": {"coordinates": [lon, lat]},
-                                     "properties": {"label": f"{text}, USA", "layer": "locality", "confidence": 1}}]})
+                                     "properties": {"label": f"{text}, USA", "layer": "locality", "confidence": 1,
+                                                    "region_a": state_of(text)}}]})
         if url.endswith("/pelias/v1/reverse"):
             return ok({"features": [{"properties": {"county": "Test County", "region_a": "IA"}}]})
         if "/directions/" in url:
             return self.directions
         raise AssertionError(f"unexpected URL {url}")
+
+
+def state_of(label):
+    """Pelias region_a for a fake result: the last part of "City, ST[, USA]"."""
+    parts = [p.strip() for p in label.split(",") if p.strip() and p.strip() != "USA"]
+    return parts[-1] if len(parts) > 1 else None
 
 
 def payload(**overrides):
@@ -256,7 +263,7 @@ class PlanTripApiTest(SimpleTestCase):
     def test_three_letters_is_enough(self):
         self.fake.search["Ccc"] = ok({"features": [{
             "geometry": {"coordinates": [-85.5, 33.6]},
-            "properties": {"label": "CCC, Cleburne County, AL, USA", "layer": "venue", "confidence": 1},
+            "properties": {"label": "CCC, Cleburne County, AL, USA", "layer": "venue", "confidence": 1, "region_a": "AL"},
         }]})
         resp = self.post(payload(current_location="Ccc"))
         self.assertEqual(resp.status_code, 200, resp.content)

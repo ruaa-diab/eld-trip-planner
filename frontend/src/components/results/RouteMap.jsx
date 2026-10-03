@@ -9,6 +9,8 @@ import './RouteMap.css'
 const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 const FOCUS_ZOOM = 9
+// maxZoom keeps a trip whose locations are all the same place from zooming to street level.
+const FIT_OPTIONS = { padding: [40, 40], maxZoom: 13 }
 const LEGEND_ORDER = ['start', 'pickup', 'dropoff', 'fuel', 'break_30', 'rest_10', 'restart_34']
 const ALWAYS_PRESENT = new Set(['start', 'pickup', 'dropoff'])
 
@@ -43,7 +45,7 @@ function markerIcon(kind, selected) {
 function FitRoute({ bounds }) {
   const map = useMap()
   useEffect(() => {
-    map.fitBounds(bounds, { padding: [40, 40] })
+    map.fitBounds(bounds, FIT_OPTIONS)
   }, [map, bounds])
   return null
 }
@@ -121,7 +123,7 @@ export default function RouteMap({ geometry, items, selected, onSelect }) {
   return (
     <section className="route-map" aria-label="Route map">
       <div className="route-map__canvas">
-        <MapContainer bounds={bounds} boundsOptions={{ padding: [40, 40] }} scrollWheelZoom={false}>
+        <MapContainer bounds={bounds} boundsOptions={FIT_OPTIONS} scrollWheelZoom={false}>
           <TileLayer url={TILE_URL} attribution={ATTRIBUTION} className="map-tiles" maxZoom={18} />
           <Polyline positions={geometry} pathOptions={{ color: '#F5A524', weight: 14, opacity: 0.18 }} interactive={false} />
           <Polyline positions={geometry} pathOptions={{ color: '#0F1B2D', weight: 8, opacity: 0.9 }} interactive={false} />

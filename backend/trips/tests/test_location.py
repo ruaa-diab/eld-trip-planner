@@ -8,7 +8,7 @@ from django.test import SimpleTestCase, override_settings
 from rest_framework.test import APIClient
 
 from trips.services import routing
-from trips.tests.test_api import FakeORS, ok, payload, status
+from trips.tests.test_api import FakeORS, ok, payload, state_of, status
 
 KEY = "secret-test-key-123"
 CHICAGO_SPOT = (41.8102, -87.7133)
@@ -151,7 +151,7 @@ class WaypointPrecisionTest(SimpleTestCase):
     def search_hit(self, text, layer, **props):
         self.fake.search[text] = ok({"features": [{
             "geometry": {"coordinates": [-87.7, 41.8]},
-            "properties": {"label": f"{text}, USA", "layer": layer, "confidence": 1, **props},
+            "properties": {"label": f"{text}, USA", "layer": layer, "confidence": 1, "region_a": state_of(text), **props},
         }]})
 
     def test_precision_by_match_level(self):

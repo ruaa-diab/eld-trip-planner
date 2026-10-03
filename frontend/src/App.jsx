@@ -70,10 +70,12 @@ function errorsFromApi(err, values) {
   if (err.code === 'address_not_found' && Array.isArray(err.fields)) {
     const fieldErrors = {}
     for (const field of err.fields) {
-      fieldErrors[field] =
-        err.reasons?.[field] === 'invalid_place'
-          ? 'Enter a proper city or address'
-          : `Couldn't find '${values[field].trim()}'. Check the spelling.`
+      const text = values[field].trim()
+      fieldErrors[field] = {
+        invalid_place: 'Enter a proper city or address',
+        outside_us: 'That location is outside the US. Enter a US address.',
+        state_mismatch: `Couldn't find '${text}'. Check the city and state.`,
+      }[err.reasons?.[field]] || `Couldn't find '${text}'. Check the spelling.`
     }
     return { fieldErrors, generalError: null }
   }

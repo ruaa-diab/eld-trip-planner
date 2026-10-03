@@ -486,3 +486,10 @@
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+/* Same-location notices under the trip heading. */
+.results__notice {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
