@@ -66,6 +66,12 @@ def locate(route, leg_index, miles_from_leg_start):
     return (lat_a + t * (lat_b - lat_a), lon_a + t * (lon_b - lon_a))
 
 
+def is_readable_name(name):
+    """A real place name: at least 3 characters and at least one letter (not "26")."""
+    name = (name or "").strip()
+    return len(name) >= 3 and any(ch.isalpha() for ch in name)
+
+
 def city_name(lat, lon, fallback):
     """"City, ST" for a point; returns fallback on any failure. Never raises."""
     try:
@@ -77,7 +83,8 @@ def city_name(lat, lon, fallback):
             "boundary.country": "US",
         })
         props = data["features"][0]["properties"]
-        place = props.get("locality") or props.get("county")
+        # Skip unusable names (e.g. a place called "26"): use the county, else the fallback.
+        place = next((n for n in (props.get("locality"), props.get("county")) if is_readable_name(n)), None)
         if place:
             region = props.get("region_a")
             return f"{place}, {region}" if region else place

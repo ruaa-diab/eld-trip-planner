@@ -113,6 +113,17 @@ class CityNameTest(SimpleTestCase):
         req.return_value = reverse_response(county="Keith County", region_a="NE")
         self.assertEqual(city_name(41.0, -101.5, "fallback"), "Keith County, NE")
 
+    def test_numeric_or_too_short_place_names_are_skipped(self, req):
+        # Live bug: a stop was named "26, NE".
+        for locality in ("26", "12-34", "Ab", " 7 "):
+            with self.subTest(locality=locality):
+                req.return_value = reverse_response(locality=locality, county="Keith County", region_a="NE")
+                self.assertEqual(city_name(41.0, -101.5, "fallback"), "Keith County, NE")
+
+    def test_unreadable_city_and_county_use_the_route_position(self, req):
+        req.return_value = reverse_response(locality="26", county="9", region_a="NE")
+        self.assertEqual(city_name(41.0, -101.5, "495 mi past Rockford, IL"), "495 mi past Rockford, IL")
+
     def test_failures_return_fallback_never_raise(self, req):
         cases = {
             "no results": dict(return_value=reverse_response()),
