@@ -7,7 +7,8 @@ from trips.hos.engine import plan_trip
 from trips.hos.validator import validate_trip
 from trips.services.logs import CYCLE_LIMIT_MIN, build_logs
 from trips.services.routing import (
-    AddressNotFound, InvalidPlace, OutsideUSInput, StateMismatch, UnroutablePoint, geocode_place, get_route,
+    AddressNotFound, InvalidPlace, OutsideUSInput, StateMismatch, UnroutableLeg, UnroutablePoint,
+    geocode_place, get_route,
 )
 from trips.services.stops import haversine_miles, locate, name_stops
 
@@ -49,9 +50,10 @@ class AddressesNotFound(Exception):
 
     .fields lists them in form order; .reasons maps each to "not_found" (no confident match),
     "invalid_place" (the match is a state, country, ZIP area, ...), "outside_us" (a non-US
-    region was typed), "state_mismatch" (no match in the state that was typed) or "no_road"
-    (the location was found but no truck road is near it). .messages holds ready-made
-    per-field messages where the form should show them as given (no_road).
+    region was typed), "state_mismatch" (no match in the state that was typed), "no_road"
+    (the location was found but no truck road is near it) or "no_route" (no road connects
+    this leg's start to this location). .messages holds ready-made per-field messages the
+    form shows as given (no_road, no_route).
     """
 
     def __init__(self, reasons, texts, field_messages=None):
@@ -60,6 +62,7 @@ class AddressesNotFound(Exception):
         self.messages = field_messages or {}
         messages = {
             "no_road": lambda f: f"{FIELD_LABELS[f]}: {self.messages[f]}",
+            "no_route": lambda f: f"{FIELD_LABELS[f]}: {self.messages[f]}",
             "invalid_place": lambda f: f"{FIELD_LABELS[f]}: Enter a proper city or address",
             "outside_us": lambda f: f"{FIELD_LABELS[f]}: That location is outside the US. Enter a US address.",
             "state_mismatch": lambda f: f"{FIELD_LABELS[f]}: Couldn't find '{texts[f]}'. Check the city and state.",
@@ -131,6 +134,13 @@ def plan(data):
         field = LOCATION_FIELDS[e.point_index]
         _, _, label, precision = places[e.point_index]
         raise AddressesNotFound({field: "no_road"}, data, {field: no_road_message(label, precision)}) from e
+    except UnroutableLeg as e:
+        # Highlight the leg's destination. Name the places as typed: the geocoder's match can
+        # read differently (live, "Honolulu, HI" resolves to "Kaneohe, HI").
+        start, end = LOCATION_FIELDS[e.leg_index], LOCATION_FIELDS[e.leg_index + 1]
+        message = (f"No truck route from {data[start].strip()} to {data[end].strip()}. "
+                   "Is there a road connection?")
+        raise AddressesNotFound({end: "no_route"}, data, {end: message}) from e
     cycle_used = data["current_cycle_used"]
     start = data["start_time"]
 

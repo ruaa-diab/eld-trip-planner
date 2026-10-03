@@ -87,6 +87,14 @@ class UnroutablePoint(NoRouteFound):
         self.point_index = point_index
 
 
+class UnroutableLeg(NoRouteFound):
+    """No road connection for one leg. .leg_index: 0 current → pickup, 1 pickup → dropoff."""
+
+    def __init__(self, leg_index):
+        super().__init__(NO_ROUTE_MESSAGES[2009], code=2009)
+        self.leg_index = leg_index
+
+
 # ORS 2010: "Could not find routable point within a radius of 5000.0 meters of specified coordinate 1: ..."
 _UNROUTABLE_COORDINATE = re.compile(r"specified coordinate (\d+)")
 
@@ -323,6 +331,9 @@ def get_route(current, pickup, dropoff):
             match = _UNROUTABLE_COORDINATE.search(e.detail) if e.code == 2010 else None
             if match and int(match.group(1)) in (0, 1):
                 raise UnroutablePoint(index + int(match.group(1))) from e
+            # ORS 2009: both points are on roads, but no road connects them (e.g. Hawaii).
+            if e.code == 2009:
+                raise UnroutableLeg(index) from e
             raise
 
     with ThreadPoolExecutor(max_workers=2) as pool:

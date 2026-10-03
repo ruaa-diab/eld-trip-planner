@@ -298,7 +298,8 @@ class PlanTripApiTest(SimpleTestCase):
         self.assertEqual(resp.json()["error"]["reasons"], {"current_location": "not_found"})
 
     def test_no_route_returns_422(self):
-        for code in (2009, 2010):
+        # 2009 (no road connection) names the leg instead: see test_no_road.py.
+        for code in (2010, 2004):
             with self.subTest(code=code):
                 self.fake.directions = status(404, {"error": {"code": code, "message": "x"}})
                 resp = self.post()

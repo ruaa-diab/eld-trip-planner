@@ -114,8 +114,49 @@ class NoRoadApiTest(SimpleTestCase):
         self.assertEqual(error["messages"], {"dropoff_location":
             "No road near Snowmass Peak, CO. Please be more specific: try a nearby address."})
 
-    def test_no_route_between_points_is_still_a_general_422(self):
-        self.fake.directions_fn = lambda request_json: status(404, {"error": {"code": 2009, "message": "Route could not be found"}})
+    def no_connection_to(self, lat, lon):
+        """ORS 2009 for the leg that ends at (lat, lon); other legs route normally."""
+        def answer(request_json):
+            x, y = request_json["coordinates"][1]
+            if (round(y, 6), round(x, 6)) == (lat, lon):
+                return status(404, {"error": {"code": 2009, "message":
+                    "Route could not be found - Unable to find a route between points 1 and 2."}})
+            return ok(leg_of(route_body(), request_json))
+        return answer
+
+    def test_leg_without_a_road_connection_names_the_leg_and_its_destination(self):
+        # Live: Denver, CO -> Honolulu, HI is ORS 2009. Pelias resolves "Honolulu, HI" to
+        # "Kaneohe, HI", so the message uses the typed text.
+        honolulu = (21.40572, -157.789396)
+        self.fake.search["Honolulu, HI"] = ok({"features": [{
+            "geometry": {"coordinates": [honolulu[1], honolulu[0]]},
+            "properties": {"label": "Kaneohe, HI, USA", "layer": "locality", "confidence": 1, "region_a": "HI"},
+        }]})
+        self.fake.directions_fn = self.no_connection_to(*honolulu)
+        resp = self.post(pickup_location="Denver, CO", dropoff_location="Honolulu, HI")
+        self.assertEqual(resp.status_code, 400)
+        error = resp.json()["error"]
+        self.assertEqual(error["code"], "address_not_found")
+        self.assertEqual(error["fields"], ["dropoff_location"])
+        self.assertEqual(error["reasons"], {"dropoff_location": "no_route"})
+        self.assertEqual(error["messages"], {"dropoff_location":
+            "No truck route from Denver, CO to Honolulu, HI. Is there a road connection?"})
+
+    def test_first_leg_without_a_connection_highlights_the_pickup(self):
+        honolulu = (21.40572, -157.789396)
+        self.fake.search["Honolulu, HI"] = ok({"features": [{
+            "geometry": {"coordinates": [honolulu[1], honolulu[0]]},
+            "properties": {"label": "Kaneohe, HI, USA", "layer": "locality", "confidence": 1, "region_a": "HI"},
+        }]})
+        self.fake.directions_fn = self.no_connection_to(*honolulu)
+        resp = self.post(current_location="Chicago, IL", pickup_location="Honolulu, HI")
+        error = resp.json()["error"]
+        self.assertEqual(error["fields"], ["pickup_location"])
+        self.assertEqual(error["messages"], {"pickup_location":
+            "No truck route from Chicago, IL to Honolulu, HI. Is there a road connection?"})
+
+    def test_other_no_route_errors_stay_a_general_422(self):
+        self.fake.directions_fn = lambda request_json: status(400, {"error": {"code": 2004, "message": "too long"}})
         resp = self.post()
         self.assertEqual(resp.status_code, 422)
         self.assertEqual(resp.json()["error"]["code"], "no_route")

@@ -77,9 +77,9 @@ function errorsFromApi(err, values) {
         state_mismatch: `Couldn't find '${text}'. Check the city and state.`,
       }[err.reasons?.[field]] || `Couldn't find '${text}'. Check the spelling.`
     }
-    // A location that was found but has no truck road nearby also gets a banner.
-    const noRoad = Object.values(err.reasons || {}).includes('no_road')
-    return { fieldErrors, generalError: noRoad ? 'Check the highlighted location.' : null }
+    // Routing problems (no road near a location, or no road connection for a leg) also get a banner.
+    const routing = Object.values(err.reasons || {}).some((r) => r === 'no_road' || r === 'no_route')
+    return { fieldErrors, generalError: routing ? 'Check the highlighted location.' : null }
   }
   if (err.code === 'invalid_input' && err.fields && typeof err.fields === 'object') {
     const fieldErrors = {}
