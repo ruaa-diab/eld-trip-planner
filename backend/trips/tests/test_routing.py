@@ -208,6 +208,15 @@ class GeocodeZipTest(SimpleTestCase):
 @mock.patch.object(routing.requests, "request")
 class GetRouteTest(SimpleTestCase):
 
+    def test_points_may_snap_to_roads_up_to_5_km_away(self, req):
+        # ORS's default 350 m radius fails for city centers far from a road
+        # (live: Corpus Christi, TX is ~2.4 km out in the bay).
+        req.return_value = response(body=ROUTE_BODY)
+        get_route(CHICAGO, ROCKFORD, DENVER)
+        body = req.call_args.kwargs["json"]
+        self.assertEqual(body["radiuses"], [5000, 5000, 5000])
+        self.assertEqual(len(body["radiuses"]), len(body["coordinates"]))
+
     def test_builds_two_legs_geometry_and_steps(self, req):
         req.return_value = response(body=ROUTE_BODY)
         route = get_route(CHICAGO, ROCKFORD, DENVER)
@@ -219,6 +228,7 @@ class GetRouteTest(SimpleTestCase):
             "coordinates": [[-87.63, 41.88], [-89.09, 42.27], [-104.99, 39.74]],
             "units": "mi",
             "instructions": True,
+            "radiuses": [5000, 5000, 5000],
         })
 
         leg0, leg1 = route.legs

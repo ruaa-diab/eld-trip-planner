@@ -20,6 +20,7 @@ GEOCODE_PATH = "/pelias/v1/search"
 REVERSE_PATH = "/pelias/v1/reverse"
 DIRECTIONS_PATH = "/openrouteservice/v2/directions/driving-hgv/geojson"
 TIMEOUT_SECONDS = 15
+SNAP_RADIUS_METERS = 5000
 
 # Geocoding acceptance. Pelias confidence is 0–1 with no documented threshold; correct
 # city matches can be "fallback" at 0.6 (e.g. "Denver, CO"), while a typo that falls back
@@ -270,6 +271,10 @@ def get_route(current, pickup, dropoff):
         "coordinates": [[lon, lat] for lat, lon, _ in points],
         "units": "mi",
         "instructions": True,
+        # Let each point snap to a road up to 5 km away (ORS default: 350 m). A city's
+        # center point can be far from any road, e.g. Corpus Christi, TX is ~2.4 km out
+        # in the bay. Kept finite so a point far out at sea still fails instead of guessing.
+        "radiuses": [SNAP_RADIUS_METERS] * len(points),
     })
 
     try:
