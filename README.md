@@ -5,9 +5,7 @@ Plans a truck trip under the Hours of Service rules of the FMCSA (Federal Motor 
 Built with Django and React for the Spotter AI full-stack assessment.
 
 - Live app: https://eld-trip-planner-e3wv.vercel.app
-- Loom walkthrough: (link)
-
-![Trip results page](docs/screenshot.png)
+- Loom walkthrough: https://www.loom.com/share/a18a75fff76a49e7be4d2b2e25abbf9d
 
 ## What it does
 
